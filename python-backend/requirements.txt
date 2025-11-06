@@ -1,0 +1,16 @@
+# CocoFile Python Backend Dependencies
+
+# PDF分析
+pdfplumber==0.11.0
+
+# Excel分析
+openpyxl==3.1.2
+
+# Word分析
+docx2txt==0.8
+
+# PowerPoint分析
+python-pptx==0.6.23
+
+# PyInstaller（バイナリ化用）
+pyinstaller==6.3.0

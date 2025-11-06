@@ -1,0 +1,13 @@
+{
+  "name": "cocofile",
+  "version": "0.1.0",
+  "description": "CocoFile - ファイル管理アシスタント",
+  "private": true,
+  "scripts": {
+    "dev": "cd frontend && npm run dev",
+    "build": "cd frontend && npm run build",
+    "tauri": "cd frontend && npm run tauri",
+    "tauri:dev": "cd frontend && npm run tauri dev",
+    "tauri:build": "cd frontend && npm run tauri build"
+  }
+}
