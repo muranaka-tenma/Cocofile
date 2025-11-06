@@ -24,13 +24,57 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
+    "targets": ["deb", "appimage", "msi", "dmg", "app"],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "identifier": "com.cocofile.app",
+    "publisher": "CocoFile",
+    "copyright": "Copyright (c) 2025 CocoFile",
+    "category": "Utility",
+    "shortDescription": "ファイル管理アシスタント",
+    "longDescription": "CocoFile は、ローカルファイルを全文検索・整理するデスクトップアプリケーションです。PDF、Excel、Word、PowerPointなどのファイル内容を高速検索できます。",
+    "linux": {
+      "deb": {
+        "depends": [
+          "libc6 (>= 2.31)",
+          "libgtk-3-0 (>= 3.24)",
+          "libwebkit2gtk-4.0-37 (>= 2.32)",
+          "libsqlite3-0 (>= 3.35)"
+        ],
+        "files": {
+          "/usr/share/applications/cocofile.desktop": "cocofile.desktop"
+        }
+      }
+    },
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "entitlements": null,
+      "exceptionDomain": null,
+      "frameworks": [],
+      "providerShortName": null,
+      "signingIdentity": null
+    },
+    "windows": {
+      "certificateThumbprint": null,
+      "digestAlgorithm": "sha256",
+      "timestampUrl": "",
+      "wix": {
+        "language": "ja-JP",
+        "template": null,
+        "fragmentPaths": [],
+        "componentRefs": [],
+        "featureGroupRefs": [],
+        "featureRefs": [],
+        "mergeRefs": [],
+        "skipWebviewInstall": false,
+        "license": null,
+        "enableElevatedUpdateRuntime": false
+      }
+    }
   }
 }
