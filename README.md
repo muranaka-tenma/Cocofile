@@ -3,8 +3,9 @@
 **個人利用ファイル管理アシスタント** - ローカル環境で動作するデスクトップアプリ
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Status](https://img.shields.io/badge/status-MVP%20Phase%204%20Complete-green.svg)
-![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20macOS%20%7C%20Linux-lightgrey.svg)
+![Status](https://img.shields.io/badge/status-v0.1.0%20Alpha-yellow.svg)
+![Platform](https://img.shields.io/badge/platform-Linux-blue.svg)
+![Release](https://img.shields.io/badge/release-ready-brightgreen.svg)
 
 ---
 
@@ -23,7 +24,38 @@ PDF、Excel、Word、PowerPointファイルの内容を全文検索し、効率�
 
 ---
 
-## 🚀 クイックスタート
+## 📥 ダウンロード
+
+### v0.1.0 Alpha（2025年11月6日）
+
+**Linux版**
+- [Linux バイナリ (tar.gz)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/cocofile-v0.1.0-linux-x86_64.tar.gz) - 51MB
+
+**その他プラットフォーム**
+- Windows版: 開発中（Phase 10で対応予定）
+- macOS版: 開発中（Phase 10で対応予定）
+
+### インストール手順（Linux）
+
+```bash
+# ダウンロードと展開
+wget https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/cocofile-v0.1.0-linux-x86_64.tar.gz
+tar -xzf cocofile-v0.1.0-linux-x86_64.tar.gz
+cd v0.1.0-linux-x86_64
+
+# 実行権限を付与
+chmod +x cocofile
+chmod +x python-analyzer-x86_64-unknown-linux-gnu
+
+# アプリケーション起動
+./cocofile
+```
+
+詳細なインストール手順は [ユーザーマニュアル](docs/USER_MANUAL.md) を参照してください。
+
+---
+
+## 🚀 開発者向けクイックスタート
 
 ### 必要環境
 
@@ -189,53 +221,90 @@ cp dist/python-analyzer ../src-tauri/binaries/python-analyzer-{target-triple}
 
 ---
 
-## 📊 現在の開発状況
+## 📚 ドキュメント
 
-### Phase 4 完了（2025年11月4日）
+### ユーザー向け
+- [ユーザーマニュアル](docs/USER_MANUAL.md) - インストールと使い方
+- [リリースノート v0.1.0](docs/RELEASE_NOTES_v0.1.0.md) - 最新版の変更点
 
-| Phase | ステータス | 達成率 |
-|-------|----------|-------|
-| Phase 1: 基礎インフラ | ✅ 完了 | 100% |
-| Phase 2: ファイル分析統合 | ✅ 完了 | 100% |
-| Phase 3: 全形式対応 | ✅ 完了 | 100% |
-| **Phase 4: バイナリ化+ログ** | ✅ **完了** | **100%** |
-| Phase 5: E2Eテスト | 🔜 次回 | 0% |
+### 開発者向け
+- [セットアップガイド](SETUP.md) - 環境構築手順
+- [API リファレンス](docs/API_REFERENCE.md) - 35個の全API仕様
+- [実装サマリー](docs/IMPLEMENTATION_SUMMARY.md) - MVP完了時の実装内容
+- [Phase 9 テストレポート](docs/PHASE9_TEST_REPORT.md) - 最新テスト結果
 
-**MVP達成率**: **約95%**
-
-### Phase 4 実装内容
-
-- ✅ PyInstallerバイナリ化設定（`.spec`ファイル）
-- ✅ バイナリパス自動解決（環境変数→バイナリ→python3フォールバック）
-- ✅ ロギングシステム（ファイル+標準エラー出力）
-- ✅ 統合テストスクリプト完成
-- ✅ Python環境セットアップドキュメント
+### プロジェクト管理
+- [進捗管理](docs/SCOPE_PROGRESS.md) - 開発フロー進捗状況
+- [プロジェクトスナップショット](docs/PROJECT_STATE_SNAPSHOT.md) - 完全な状態記録
 
 ---
 
-## 🎯 次のステップ（Phase 5）
+## 📊 現在の開発状況
 
-### 優先度高
+### Phase 9完了（2025年11月6日）
 
-1. **実ファイルE2Eテスト**
-   - サンプルファイル作成（PDF/Excel/Word/PPT）
-   - スキャン→検索の完全動作確認
+**ステータス**: ✅ **v0.1.0 Alpha リリース準備完了**
 
-2. **Python依存関係インストール**
-   - 開発環境でvenv構築
-   - 実ファイル分析動作確認
+| Phase | ステータス | 達成率 |
+|-------|----------|-------|
+| Phase 1-5: MVP基本機能 | ✅ 完了 | 100% |
+| Phase 6: テスト | ✅ 完了 | 80% |
+| Phase 7: リリース準備 | ✅ 完了 | 80% |
+| Phase 8: 完了準備 | ✅ 完了 | 100% |
+| **Phase 9: テスト実施** | ✅ **完了** | **100%** |
+| Phase 10: クロスプラットフォーム | 🔜 次回 | 0% |
 
-3. **クロスプラットフォーム検証**
-   - Windows/macOS/Linux動作確認
+**MVP達成率**: **95%** （19/20タスク完了）
 
-### 優先度中
+### 実装済み機能
 
-4. **PyInstallerバイナリ実ビルド**
-5. **ドキュメント整備**（README、ユーザーガイド）
+**コア機能**:
+- ✅ 5画面実装（メイン検索、設定、スキャン、タグ管理、ファイル詳細）
+- ✅ 全文検索（SQLite FTS5 + N-gram）
+- ✅ ファイル分析（PDF/Excel/Word/PowerPoint）
+- ✅ タグ管理・お気に入り機能
+- ✅ ファイル整理支援（Phase 7）
 
-### 優先度低
+**技術実装**:
+- ✅ 35個のTauri Command API
+- ✅ Pythonバイナリ化（PyInstaller）
+- ✅ Linuxプロダクションビルド（15MB + 36MB）
+- ✅ 統合テスト完了
 
-6. **パフォーマンス最適化**
+**パフォーマンス**:
+- ✅ 予測メモリ使用量: 30-50MB（アイドル時）
+- ✅ ビルドサイズ: 合計51MB
+- ✅ ビルド時間: 6.34秒（フロントエンド）
+
+---
+
+## 🎯 次のステップ（Phase 10以降）
+
+### Phase 10: クロスプラットフォームビルド（予定）
+
+1. **Windows本番ビルド**
+   - MSIインストーラー作成
+   - 実機テスト実施
+
+2. **macOS本番ビルド**
+   - DMGインストーラー作成
+   - Gatekeeper対応
+
+3. **Linux追加形式**
+   - .deb パッケージ作成（Debian/Ubuntu）
+   - .AppImage 作成（ポータブル版）
+
+### Phase 11: フィードバック収集と改善
+
+4. **ベータユーザーテスト**（5-10名）
+5. **パフォーマンス実測**（メモリ、CPU、検索速度）
+6. **バグ修正と改善**
+
+### Phase 12: v0.2.0開発（予定）
+
+7. **日付範囲フィルターUI実装**
+8. **ファイルプレビュー機能**
+9. **自動スキャン機能**
 
 ---
 
