@@ -132,10 +132,10 @@ jobs:
           New-Item -ItemType Directory -Force -Path src-tauri\binaries
           Copy-Item python-backend\dist\python-analyzer.exe src-tauri\binaries\python-analyzer-x86_64-pc-windows-msvc.exe
 
-      - name: Verify symlink
+      - name: Create junction
         run: |
           if (!(Test-Path frontend\src-tauri)) {
-            New-Item -ItemType SymbolicLink -Path frontend\src-tauri -Target src-tauri
+            cmd /c mklink /J frontend\src-tauri src-tauri
           }
           Get-Item frontend\src-tauri
 
