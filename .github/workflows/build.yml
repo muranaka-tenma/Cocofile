@@ -60,6 +60,9 @@ jobs:
           cp python-backend/dist/python-analyzer src-tauri/binaries/python-analyzer-x86_64-unknown-linux-gnu
           chmod +x src-tauri/binaries/python-analyzer-x86_64-unknown-linux-gnu
 
+      - name: Install root dependencies
+        run: npm install
+
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
@@ -173,6 +176,9 @@ jobs:
           mkdir -p src-tauri/binaries
           cp python-backend/dist/python-analyzer src-tauri/binaries/python-analyzer-x86_64-apple-darwin
           chmod +x src-tauri/binaries/python-analyzer-x86_64-apple-darwin
+
+      - name: Install root dependencies
+        run: npm install
 
       - name: Install frontend dependencies
         working-directory: frontend
