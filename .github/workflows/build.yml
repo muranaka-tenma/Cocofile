@@ -64,6 +64,10 @@ jobs:
         working-directory: frontend
         run: npm ci
 
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
+
       - name: Build Tauri app
         working-directory: frontend
         run: npm run tauri build
@@ -116,6 +120,10 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Build Tauri app
         working-directory: frontend
@@ -170,6 +178,10 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
+
+      - name: Build frontend
+        working-directory: frontend
+        run: npm run build
 
       - name: Build Tauri app
         working-directory: frontend
