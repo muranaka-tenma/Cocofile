@@ -67,9 +67,6 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Copy frontend build to src-tauri
-        run: cp -r frontend/dist src-tauri/dist
-
       - name: Build Tauri app
         run: npm run tauri:build
 
@@ -183,9 +180,6 @@ jobs:
 
       - name: Build frontend
         run: npm run build
-
-      - name: Copy frontend build to src-tauri
-        run: cp -r frontend/dist src-tauri/dist
 
       - name: Build Tauri app
         run: npm run tauri:build
