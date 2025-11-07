@@ -4,9 +4,9 @@
   "identifier": "com.cocofile.app",
   "build": {
     "beforeDevCommand": "cd ../frontend && npm run dev",
-    "beforeBuildCommand": "cd ../frontend && npm run build",
+    "beforeBuildCommand": "npm run build",
     "devUrl": "http://localhost:5173",
-    "frontendDist": "../frontend/dist"
+    "frontendDist": "../dist"
   },
   "app": {
     "windows": [
