@@ -73,3 +73,11 @@ htmlcov/
 # Tauri specific
 src-tauri/target/
 src-tauri/Cargo.lock
+
+# Release binaries
+release/*.deb
+release/*.AppImage
+release/*.tar.gz
+release/*.msi
+release/*.dmg
+release/*.exe

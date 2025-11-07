@@ -3,9 +3,9 @@
 **個人利用ファイル管理アシスタント** - ローカル環境で動作するデスクトップアプリ
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Status](https://img.shields.io/badge/status-v0.1.0%20Alpha-yellow.svg)
-![Platform](https://img.shields.io/badge/platform-Linux-blue.svg)
-![Release](https://img.shields.io/badge/release-ready-brightgreen.svg)
+![Status](https://img.shields.io/badge/status-v0.1.1%20Dev-yellow.svg)
+![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-blue.svg)
+![Release](https://img.shields.io/badge/release-CI%2FCD%20ready-brightgreen.svg)
 
 ---
 
@@ -26,16 +26,26 @@ PDF、Excel、Word、PowerPointファイルの内容を全文検索し、効率�
 
 ## 📥 ダウンロード
 
+### 最新リリース
+
+**[リリースページ](https://github.com/muranaka-tenma/Cocofile/releases)** からダウンロードできます。
+
 ### v0.1.0 Alpha（2025年11月6日）
 
 **Linux版**
-- [Linux バイナリ (tar.gz)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/cocofile-v0.1.0-linux-x86_64.tar.gz) - 51MB
+- [tar.gz (ポータブル版)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/cocofile-v0.1.0-linux-x86_64.tar.gz) - 41MB
+- [.deb (Debian/Ubuntu)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/CocoFile_0.1.0_amd64.deb) - 5.3MB
+- [AppImage (全ディストリ対応)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/CocoFile_0.1.0_amd64.AppImage) - 78MB
 
-**その他プラットフォーム**
-- Windows版: 開発中（Phase 10で対応予定）
-- macOS版: 開発中（Phase 10で対応予定）
+**Windows版** (開発中 - Phase 11で自動ビルド対応)
+- MSIインストーラー: 近日公開
 
-### インストール手順（Linux）
+**macOS版** (開発中 - Phase 11で自動ビルド対応)
+- DMGインストーラー: 近日公開
+
+### インストール手順
+
+#### Linux - tar.gz（ポータブル版）
 
 ```bash
 # ダウンロードと展開
@@ -49,6 +59,35 @@ chmod +x python-analyzer-x86_64-unknown-linux-gnu
 
 # アプリケーション起動
 ./cocofile
+```
+
+#### Linux - .deb（Debian/Ubuntu）
+
+```bash
+# ダウンロード
+wget https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/CocoFile_0.1.0_amd64.deb
+
+# インストール
+sudo dpkg -i CocoFile_0.1.0_amd64.deb
+
+# 依存関係の解決（必要な場合）
+sudo apt-get install -f
+
+# 起動（アプリケーションメニューから、またはコマンドから）
+cocofile
+```
+
+#### Linux - AppImage（全ディストリ対応）
+
+```bash
+# ダウンロード
+wget https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/CocoFile_0.1.0_amd64.AppImage
+
+# 実行権限を付与
+chmod +x CocoFile_0.1.0_amd64.AppImage
+
+# 起動
+./CocoFile_0.1.0_amd64.AppImage
 ```
 
 詳細なインストール手順は [ユーザーマニュアル](docs/USER_MANUAL.md) を参照してください。
@@ -241,9 +280,9 @@ cp dist/python-analyzer ../src-tauri/binaries/python-analyzer-{target-triple}
 
 ## 📊 現在の開発状況
 
-### Phase 9完了（2025年11月6日）
+### Phase 11進行中（2025年11月6日〜）
 
-**ステータス**: ✅ **v0.1.0 Alpha リリース準備完了**
+**ステータス**: 🚧 **Phase 11: クロスプラットフォームビルド進行中**
 
 | Phase | ステータス | 達成率 |
 |-------|----------|-------|
@@ -251,10 +290,12 @@ cp dist/python-analyzer ../src-tauri/binaries/python-analyzer-{target-triple}
 | Phase 6: テスト | ✅ 完了 | 80% |
 | Phase 7: リリース準備 | ✅ 完了 | 80% |
 | Phase 8: 完了準備 | ✅ 完了 | 100% |
-| **Phase 9: テスト実施** | ✅ **完了** | **100%** |
-| Phase 10: クロスプラットフォーム | 🔜 次回 | 0% |
+| Phase 9: テスト実施 | ✅ 完了 | 100% |
+| Phase 10: GitHubリリース | ✅ 完了 | 100% |
+| **Phase 11: クロスプラットフォーム** | 🚧 **進行中** | **40%** |
 
-**MVP達成率**: **95%** （19/20タスク完了）
+**MVP達成率**: **100%** （20/20タスク完了）
+**Phase 11達成率**: **40%** （Linux追加形式 + GitHub Actions完了）
 
 ### 実装済み機能
 
@@ -273,28 +314,37 @@ cp dist/python-analyzer ../src-tauri/binaries/python-analyzer-{target-triple}
 
 **パフォーマンス**:
 - ✅ 予測メモリ使用量: 30-50MB（アイドル時）
-- ✅ ビルドサイズ: 合計51MB
+- ✅ ビルドサイズ: Linux tar.gz 41MB / .deb 5.3MB / AppImage 78MB
 - ✅ ビルド時間: 6.34秒（フロントエンド）
+
+**Phase 11進捗**:
+- ✅ Linux .deb パッケージ作成
+- ✅ Linux AppImage 作成
+- ✅ GitHub Actions CI/CD設定
+- 🔄 Windows/macOS自動ビルド（GitHub Actions稼働待ち）
 
 ---
 
-## 🎯 次のステップ（Phase 10以降）
+## 🎯 次のステップ（Phase 11以降）
 
-### Phase 10: クロスプラットフォームビルド（予定）
+### Phase 11: クロスプラットフォームビルド（進行中）
 
-1. **Windows本番ビルド**
-   - MSIインストーラー作成
-   - 実機テスト実施
+1. **Linux追加形式** ✅ 完了
+   - ✅ .deb パッケージ作成（Debian/Ubuntu）
+   - ✅ .AppImage 作成（ポータブル版）
 
-2. **macOS本番ビルド**
-   - DMGインストーラー作成
-   - Gatekeeper対応
+2. **GitHub Actions CI/CD** ✅ 完了
+   - ✅ Linux自動ビルド設定
+   - ✅ Windows自動ビルド設定
+   - ✅ macOS自動ビルド設定
+   - 🔄 次回タグプッシュ時に稼働
 
-3. **Linux追加形式**
-   - .deb パッケージ作成（Debian/Ubuntu）
-   - .AppImage 作成（ポータブル版）
+3. **Windows/macOS本番ビルド** 🔜 次回
+   - 🔄 GitHub Actionsで自動ビルド実施予定
+   - 🔄 MSI/DMGインストーラー作成
+   - 🔄 実機テスト実施
 
-### Phase 11: フィードバック収集と改善
+### Phase 12: フィードバック収集と改善
 
 4. **ベータユーザーテスト**（5-10名）
 5. **パフォーマンス実測**（メモリ、CPU、検索速度）
