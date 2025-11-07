@@ -146,9 +146,6 @@ jobs:
       - name: Build frontend
         run: npm run build
 
-      - name: Copy frontend build to src-tauri
-        run: Copy-Item -Recurse frontend\dist src-tauri\dist
-
       - name: Build Tauri app
         run: npm run tauri:build
 
