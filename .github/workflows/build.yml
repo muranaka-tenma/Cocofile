@@ -64,13 +64,9 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-
       - name: Build Tauri app
-        working-directory: src-tauri
-        run: cargo tauri build
+        working-directory: frontend
+        run: npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -121,15 +117,9 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-
-      - name: Install Tauri CLI
-        run: cargo install tauri-cli --version ^2.0.0
-
       - name: Build Tauri app
-        run: cargo tauri build
+        working-directory: frontend
+        run: npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -181,13 +171,9 @@ jobs:
         working-directory: frontend
         run: npm ci
 
-      - name: Build frontend
-        working-directory: frontend
-        run: npm run build
-
       - name: Build Tauri app
-        working-directory: src-tauri
-        run: cargo tauri build
+        working-directory: frontend
+        run: npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
