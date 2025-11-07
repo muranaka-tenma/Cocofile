@@ -26,7 +26,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
-            libwebkit2gtk-4.0-dev \
+            libwebkit2gtk-4.1-dev \
             build-essential \
             curl \
             wget \
@@ -61,14 +61,12 @@ jobs:
           chmod +x src-tauri/binaries/python-analyzer-x86_64-unknown-linux-gnu
 
       - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm ci
+        working-directory: frontend
+        run: npm ci
 
       - name: Build Tauri app
-        run: |
-          cd frontend
-          npm run tauri build
+        working-directory: frontend
+        run: npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -116,14 +114,12 @@ jobs:
           Copy-Item python-backend\dist\python-analyzer.exe src-tauri\binaries\python-analyzer-x86_64-pc-windows-msvc.exe
 
       - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm ci
+        working-directory: frontend
+        run: npm ci
 
       - name: Build Tauri app
-        run: |
-          cd frontend
-          npm run tauri build
+        working-directory: frontend
+        run: npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
@@ -172,14 +168,12 @@ jobs:
           chmod +x src-tauri/binaries/python-analyzer-x86_64-apple-darwin
 
       - name: Install frontend dependencies
-        run: |
-          cd frontend
-          npm ci
+        working-directory: frontend
+        run: npm ci
 
       - name: Build Tauri app
-        run: |
-          cd frontend
-          npm run tauri build
+        working-directory: frontend
+        run: npm run tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
