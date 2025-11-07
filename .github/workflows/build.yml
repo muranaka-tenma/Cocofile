@@ -68,8 +68,10 @@ jobs:
 
       - name: Verify symlink
         run: |
-          ls -la frontend/src-tauri
-          test -L frontend/src-tauri || ln -s ../src-tauri frontend/src-tauri
+          ls -la frontend/ || true
+          if [ ! -L frontend/src-tauri ]; then
+            ln -s ../src-tauri frontend/src-tauri
+          fi
           ls -la frontend/src-tauri
 
       - name: Install frontend dependencies
@@ -194,8 +196,10 @@ jobs:
 
       - name: Verify symlink
         run: |
-          ls -la frontend/src-tauri
-          test -L frontend/src-tauri || ln -s ../src-tauri frontend/src-tauri
+          ls -la frontend/ || true
+          if [ ! -L frontend/src-tauri ]; then
+            ln -s ../src-tauri frontend/src-tauri
+          fi
           ls -la frontend/src-tauri
 
       - name: Install frontend dependencies
