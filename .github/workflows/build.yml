@@ -139,6 +139,16 @@ jobs:
           }
           Get-Item frontend\src-tauri
 
+      - name: Debug - Check paths
+        run: |
+          Write-Host "=== Directory structure ==="
+          Get-ChildItem -Recurse -Depth 2 | Select-Object FullName, LinkType
+          Write-Host "`n=== Frontend dist exists? ==="
+          Test-Path frontend\dist
+          Get-ChildItem frontend\dist
+          Write-Host "`n=== Tauri config ==="
+          Get-Content src-tauri\tauri.conf.json | Select-String -Pattern "frontendDist"
+
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
