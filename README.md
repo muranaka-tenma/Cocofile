@@ -6,7 +6,7 @@
 ![Status](https://img.shields.io/badge/status-v0.1.1--alpha-yellow.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-blue.svg)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
-![Beta Test](https://img.shields.io/badge/beta%20test-募集中-orange.svg)
+![Phase](https://img.shields.io/badge/phase-12%20testing-orange.svg)
 
 ---
 
@@ -27,10 +27,10 @@ PDF、Excel、Word、PowerPointファイルの内容を全文検索し、効率�
 
 ## 📥 ダウンロード
 
-### 🎉 ベータテスト募集中！
+### 🎉 v0.1.1-alpha リリース！
 
-v0.1.1-alpha をリリースしました。全プラットフォーム（Linux/Windows/macOS）対応です。
-**[ベータテスターを募集しています](https://github.com/muranaka-tenma/Cocofile/issues)** - フィードバックをお待ちしています！
+全プラットフォーム（Linux/Windows/macOS）対応の初回リリースです。
+現在、セルフテスト実施中です。
 
 ### v0.1.1-alpha（2025年11月10日） - 最新
 
