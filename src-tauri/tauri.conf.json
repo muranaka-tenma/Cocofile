@@ -1,6 +1,6 @@
 {
   "productName": "CocoFile",
-  "version": "0.1.0",
+  "version": "0.1.2",
   "identifier": "com.cocofile.app",
   "build": {
     "beforeDevCommand": "cd ../frontend && npm run dev",
@@ -24,6 +24,9 @@
   "bundle": {
     "active": true,
     "targets": "all",
+    "externalBin": [
+      "binaries/python-analyzer"
+    ],
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
