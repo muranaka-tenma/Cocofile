@@ -3,9 +3,10 @@
 **個人利用ファイル管理アシスタント** - ローカル環境で動作するデスクトップアプリ
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Status](https://img.shields.io/badge/status-v0.1.1%20Dev-yellow.svg)
+![Status](https://img.shields.io/badge/status-v0.1.1--alpha-yellow.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-blue.svg)
-![Release](https://img.shields.io/badge/release-CI%2FCD%20ready-brightgreen.svg)
+![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
+![Beta Test](https://img.shields.io/badge/beta%20test-募集中-orange.svg)
 
 ---
 
@@ -26,22 +27,27 @@ PDF、Excel、Word、PowerPointファイルの内容を全文検索し、効率�
 
 ## 📥 ダウンロード
 
-### 最新リリース
+### 🎉 ベータテスト募集中！
 
-**[リリースページ](https://github.com/muranaka-tenma/Cocofile/releases)** からダウンロードできます。
+v0.1.1-alpha をリリースしました。全プラットフォーム（Linux/Windows/macOS）対応です。
+**[ベータテスターを募集しています](https://github.com/muranaka-tenma/Cocofile/issues)** - フィードバックをお待ちしています！
 
-### v0.1.0 Alpha（2025年11月6日）
+### v0.1.1-alpha（2025年11月10日） - 最新
 
-**Linux版**
-- [tar.gz (ポータブル版)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/cocofile-v0.1.0-linux-x86_64.tar.gz) - 41MB
-- [.deb (Debian/Ubuntu)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/CocoFile_0.1.0_amd64.deb) - 5.3MB
-- [AppImage (全ディストリ対応)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.0/CocoFile_0.1.0_amd64.AppImage) - 78MB
+**[リリースページ](https://github.com/muranaka-tenma/Cocofile/releases/tag/v0.1.1-alpha)**
 
-**Windows版** (開発中 - Phase 11で自動ビルド対応)
-- MSIインストーラー: 近日公開
+#### 🐧 Linux
+- [.deb (Debian/Ubuntu)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.1-alpha/CocoFile_0.1.0_amd64.deb) - 5.2MB
+- [AppImage (全ディストリビューション)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.1-alpha/CocoFile_0.1.0_amd64.AppImage) - 77.7MB
 
-**macOS版** (開発中 - Phase 11で自動ビルド対応)
-- DMGインストーラー: 近日公開
+#### 🪟 Windows
+- [MSI Installer](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.1-alpha/CocoFile_0.1.0_x64_en-US.msi) - 4.6MB
+- [NSIS Installer](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.1-alpha/CocoFile_0.1.0_x64-setup.exe) - 3.2MB
+
+#### 🍎 macOS
+- [DMG (Apple Silicon)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.1-alpha/CocoFile_0.1.0_aarch64.dmg) - 4.7MB
+
+**インストールガイド**: [docs/BETA_TEST_GUIDE.md](docs/BETA_TEST_GUIDE.md)
 
 ### インストール手順
 
