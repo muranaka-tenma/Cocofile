@@ -160,8 +160,8 @@ jobs:
         with:
           name: windows-builds
           path: |
-            src-tauri/target/release/bundle/msi/*.msi
-            src-tauri/target/release/*.exe
+            frontend/src-tauri/target/release/bundle/msi/*.msi
+            frontend/src-tauri/target/release/bundle/nsis/*.exe
 
   build-macos:
     runs-on: macos-latest
@@ -243,12 +243,9 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: |
-            linux-builds/**/*.deb
-            linux-builds/**/*.rpm
-            linux-builds/**/*.AppImage
-            windows-builds/**/*.msi
-            windows-builds/**/*.exe
-            macos-builds/**/*.dmg
+            linux-builds/**/*
+            windows-builds/**/*
+            macos-builds/**/*
           draft: false
           prerelease: true
         env:
