@@ -132,23 +132,6 @@ jobs:
           New-Item -ItemType Directory -Force -Path src-tauri\binaries
           Copy-Item python-backend\dist\python-analyzer.exe src-tauri\binaries\python-analyzer-x86_64-pc-windows-msvc.exe
 
-      - name: Create junction
-        run: |
-          if (!(Test-Path frontend\src-tauri)) {
-            cmd /c mklink /J frontend\src-tauri src-tauri
-          }
-          Get-Item frontend\src-tauri
-
-      - name: Debug - Check paths
-        run: |
-          Write-Host "=== Directory structure ==="
-          Get-ChildItem -Recurse -Depth 2 | Select-Object FullName, LinkType
-          Write-Host "`n=== Frontend dist exists? ==="
-          Test-Path frontend\dist
-          Get-ChildItem frontend\dist
-          Write-Host "`n=== Tauri config ==="
-          Get-Content src-tauri\tauri.conf.json | Select-String -Pattern "frontendDist"
-
       - name: Install frontend dependencies
         working-directory: frontend
         run: npm ci
@@ -157,7 +140,10 @@ jobs:
         run: npm run build
 
       - name: Build Tauri app
-        run: npm run tauri:build
+        env:
+          TAURI_CONFIG: '{"build":{"frontendDist":"../frontend/dist"}}'
+        working-directory: src-tauri
+        run: cargo tauri build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
