@@ -146,6 +146,12 @@ jobs:
           }
           Copy-Item -Recurse src-tauri frontend\src-tauri
 
+      - name: Fix frontendDist path for Windows
+        run: |
+          $config = Get-Content frontend\src-tauri\tauri.conf.json | ConvertFrom-Json
+          $config.build.frontendDist = "../dist"
+          $config | ConvertTo-Json -Depth 10 | Set-Content frontend\src-tauri\tauri.conf.json
+
       - name: Build Tauri app
         run: npm run tauri:build
 
