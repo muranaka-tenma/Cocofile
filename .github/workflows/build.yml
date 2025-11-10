@@ -139,11 +139,15 @@ jobs:
       - name: Build frontend
         run: npm run build
 
+      - name: Copy src-tauri to frontend (Windows workaround)
+        run: |
+          if (Test-Path frontend\src-tauri) {
+            Remove-Item -Recurse -Force frontend\src-tauri
+          }
+          Copy-Item -Recurse src-tauri frontend\src-tauri
+
       - name: Build Tauri app
-        env:
-          TAURI_CONFIG: '{"build":{"frontendDist":"../frontend/dist"}}'
-        working-directory: src-tauri
-        run: cargo tauri build
+        run: npm run tauri:build
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
