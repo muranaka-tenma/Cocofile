@@ -130,7 +130,7 @@ jobs:
       - name: Copy Python binary to Tauri binaries
         run: |
           New-Item -ItemType Directory -Force -Path src-tauri\binaries
-          Copy-Item python-backend\dist\python-analyzer.exe src-tauri\binaries\python-analyzer-x86_64-pc-windows-msvc.exe
+          Copy-Item python-backend\dist\python-analyzer.exe src-tauri\binaries\python-analyzer.exe
 
       - name: Install frontend dependencies
         working-directory: frontend
@@ -145,6 +145,17 @@ jobs:
             Remove-Item -Recurse -Force frontend\src-tauri
           }
           Copy-Item -Recurse src-tauri frontend\src-tauri
+
+      - name: Verify Python binary copied
+        run: |
+          Write-Host "=== Checking binaries directory ==="
+          if (Test-Path frontend\src-tauri\binaries) {
+            Write-Host "binaries directory exists"
+            dir frontend\src-tauri\binaries
+          } else {
+            Write-Host "ERROR: binaries directory NOT found"
+            exit 1
+          }
 
       - name: Fix frontendDist path for Windows
         run: |
