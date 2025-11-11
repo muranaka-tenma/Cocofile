@@ -73,6 +73,8 @@ htmlcov/
 # Tauri specific
 src-tauri/target/
 src-tauri/Cargo.lock
+src-tauri/binaries/*
+!src-tauri/binaries/.gitkeep
 
 # Release binaries
 release/*.deb
