@@ -130,7 +130,7 @@ jobs:
       - name: Copy Python binary to Tauri binaries
         run: |
           New-Item -ItemType Directory -Force -Path src-tauri\binaries
-          Copy-Item python-backend\dist\python-analyzer.exe src-tauri\binaries\python-analyzer.exe
+          Copy-Item python-backend\dist\python-analyzer.exe src-tauri\binaries\python-analyzer-x86_64-pc-windows-msvc.exe
 
       - name: Install frontend dependencies
         working-directory: frontend

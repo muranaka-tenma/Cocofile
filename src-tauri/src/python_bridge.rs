@@ -255,7 +255,7 @@ fn get_python_backend_command() -> Result<(String, Vec<String>), String> {
 
     // 2. バイナリディレクトリチェック
     let binary_name = if cfg!(target_os = "windows") {
-        "python-analyzer.exe"
+        "python-analyzer-x86_64-pc-windows-msvc.exe"
     } else if cfg!(target_os = "macos") {
         "python-analyzer-x86_64-apple-darwin"
     } else {
