@@ -27,7 +27,7 @@
     "externalBin": [
       "binaries/python-analyzer"
     ],
-   "resources": [
+    "resources": [
       "binaries/*"
     ],
     "icon": [
