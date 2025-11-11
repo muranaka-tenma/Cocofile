@@ -24,8 +24,8 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "externalBin": [
-      "binaries/python-analyzer"
+    "resources": [
+      "binaries/*"
     ],
     "icon": [
       "icons/32x32.png",
