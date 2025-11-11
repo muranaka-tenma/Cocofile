@@ -255,11 +255,11 @@ fn get_python_backend_command() -> Result<(String, Vec<String>), String> {
 
     // 2. バイナリディレクトリチェック
     let binary_name = if cfg!(target_os = "windows") {
-        "python-analyzer-x86_64-pc-windows-msvc.exe"
+        "python-analyzer.exe"
     } else if cfg!(target_os = "macos") {
-        "python-analyzer-x86_64-apple-darwin"
+        "python-analyzer"
     } else {
-        "python-analyzer-x86_64-unknown-linux-gnu"
+        "python-analyzer"
     };
 
     let binary_paths = vec![
