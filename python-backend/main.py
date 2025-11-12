@@ -16,6 +16,9 @@ import json
 import traceback
 from typing import Dict, Any
 
+# stdoutの行バッファリングを強制的に有効化（PyInstallerでのstdio通信のため）
+sys.stdout.reconfigure(line_buffering=True)
+
 # 分析モジュールのインポート
 from analyzers.pdf_analyzer import analyze_pdf
 from analyzers.excel_analyzer import analyze_excel
