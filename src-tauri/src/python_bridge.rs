@@ -262,14 +262,26 @@ fn get_python_backend_command() -> Result<(String, Vec<String>), String> {
         "python-analyzer"
     };
 
-    let binary_paths = vec![
-        // カレントディレクトリからの相対パス（開発時）
-        PathBuf::from(format!("src-tauri/binaries/{}", binary_name)),
-        // 実行ファイルからの相対パス（本番時）
-        PathBuf::from(format!("binaries/{}", binary_name)),
-        // 絶対パス（本番時）
-        PathBuf::from(format!("/usr/local/bin/{}", binary_name)),
-    ];
+    let mut binary_paths = vec![];
+
+    // 実行ファイルの場所から探す（本番環境）
+    if let Ok(exe_path) = std::env::current_exe() {
+        if let Some(exe_dir) = exe_path.parent() {
+            // 実行ファイルと同じディレクトリの binaries/
+            binary_paths.push(exe_dir.join("binaries").join(binary_name));
+            // 実行ファイルの親ディレクトリの binaries/
+            if let Some(parent_dir) = exe_dir.parent() {
+                binary_paths.push(parent_dir.join("binaries").join(binary_name));
+            }
+        }
+    }
+
+    // カレントディレクトリからの相対パス（開発時）
+    binary_paths.push(PathBuf::from(format!("src-tauri/binaries/{}", binary_name)));
+    // カレントディレクトリの binaries/（開発時）
+    binary_paths.push(PathBuf::from(format!("binaries/{}", binary_name)));
+    // 絶対パス（Unix系本番時）
+    binary_paths.push(PathBuf::from(format!("/usr/local/bin/{}", binary_name)));
 
     for binary_path in binary_paths {
         if binary_path.exists() {
