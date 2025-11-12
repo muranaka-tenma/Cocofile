@@ -124,7 +124,7 @@ jobs:
       - name: Build Python Analyzer
         run: |
           cd python-backend
-          pyinstaller --console python-analyzer.spec
+          pyinstaller python-analyzer.spec
           dir dist\
 
       - name: Copy Python binary to Tauri binaries
