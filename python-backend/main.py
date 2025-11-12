@@ -13,14 +13,20 @@ stdin/stdout JSON通信でRust(Tauri)と連携します。
 
 import sys
 import os
+import io
 import json
 import traceback
 from typing import Dict, Any
 
 # stdout/stderrを完全アンバッファリングモードに設定（PyInstallerでのstdio通信のため）
-# バッファサイズ0で即座にフラッシュされる
-sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
+# PyInstallerでビルドされたexeでは、os.fdopen()が失敗する場合があるため、try-exceptで保護
+try:
+    # バッファサイズ0で即座にフラッシュされる
+    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+    sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
+except (OSError, AttributeError, io.UnsupportedOperation):
+    # PyInstallerまたは特殊な環境では、環境変数PYTHONUNBUFFERED=1に依存
+    pass
 
 # 分析モジュールのインポート
 from analyzers.pdf_analyzer import analyze_pdf
