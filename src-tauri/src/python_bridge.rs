@@ -76,6 +76,7 @@ impl PythonBridge {
         debug_log(&format!("Spawning Python process: {}", program));
         let mut child = match Command::new(&program)
             .args(&args)
+            .env("PYTHONUNBUFFERED", "1")  // stdout/stderrアンバッファリング強制
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
