@@ -4,6 +4,30 @@ use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::Mutex;
+use std::fs::{OpenOptions, create_dir_all};
+
+/// デバッグログをファイルに書き込む
+fn debug_log(message: &str) {
+    let log_message = format!("[{}] {}\n", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), message);
+
+    // コンソールにも出力
+    eprintln!("{}", log_message.trim());
+
+    // ログディレクトリを取得
+    if let Some(app_data) = dirs::config_dir() {
+        let log_dir = app_data.join("com.cocofile.app").join("logs");
+        let _ = create_dir_all(&log_dir);
+
+        let log_file = log_dir.join("python-bridge-debug.log");
+        if let Ok(mut file) = OpenOptions::new()
+            .create(true)
+            .append(true)
+            .open(&log_file)
+        {
+            let _ = file.write_all(log_message.as_bytes());
+        }
+    }
+}
 
 /// Pythonプロセスとの通信を管理する構造体
 pub struct PythonBridge {
@@ -27,22 +51,45 @@ impl PythonBridge {
     /// 開発中はpython3コマンドで直接実行
     /// 本番環境ではPyInstallerでバイナリ化したファイルを実行
     pub fn start(&mut self) -> Result<(), String> {
+        debug_log("PythonBridge::start() called");
+
         // 既に起動している場合はエラー
         if self.process.is_some() {
+            debug_log("ERROR: Python process is already running");
             return Err("Python process is already running".to_string());
         }
 
         // Pythonバックエンドの実行パスを取得
-        let (program, args) = get_python_backend_command()?;
+        debug_log("Getting Python backend command...");
+        let (program, args) = match get_python_backend_command() {
+            Ok(cmd) => {
+                debug_log(&format!("Python command: {} {:?}", cmd.0, cmd.1));
+                cmd
+            }
+            Err(e) => {
+                debug_log(&format!("ERROR: Failed to get Python backend command: {}", e));
+                return Err(e);
+            }
+        };
 
         // プロセス起動
-        let mut child = Command::new(program)
-            .args(args)
+        debug_log(&format!("Spawning Python process: {}", program));
+        let mut child = match Command::new(&program)
+            .args(&args)
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| format!("Failed to start Python process: {}", e))?;
+        {
+            Ok(child) => {
+                debug_log("Python process spawned successfully");
+                child
+            }
+            Err(e) => {
+                debug_log(&format!("ERROR: Failed to spawn Python process: {}", e));
+                return Err(format!("Failed to start Python process: {}", e));
+            }
+        };
 
         // stdinとstdoutを取得
         let stdin = child
