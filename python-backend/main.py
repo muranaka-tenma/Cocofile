@@ -24,7 +24,7 @@ try:
     # バッファサイズ0で即座にフラッシュされる
     sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
     sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
-except (OSError, AttributeError, io.UnsupportedOperation):
+except (OSError, AttributeError, io.UnsupportedOperation, ValueError):
     # PyInstallerまたは特殊な環境では、環境変数PYTHONUNBUFFERED=1に依存
     pass
 
