@@ -57,6 +57,7 @@ jobs:
       - name: Build Python Analyzer
         run: |
           cd python-backend
+          rm -rf dist build
           pyinstaller python-analyzer.spec
           ls -lh dist/
 
@@ -211,6 +212,7 @@ jobs:
       - name: Build Python Analyzer
         run: |
           cd python-backend
+          rm -rf dist build
           pyinstaller python-analyzer.spec
           ls -lh dist/
 
