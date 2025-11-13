@@ -44,8 +44,13 @@ def send_response(status: str, data: Any = None, error: str = None):
         response["error"] = error
 
     # JSON出力（改行で区切り）
-    print(json.dumps(response, ensure_ascii=False))
-    sys.stdout.flush()
+    try:
+        print(json.dumps(response, ensure_ascii=False))
+        sys.stdout.flush()
+    except (OSError, ValueError) as e:
+        # PyInstallerまたは環境によってはstdoutのflush()が失敗する場合がある
+        # エラーを無視して続行
+        pass
 
 
 def handle_command(command_data: Dict[str, Any]):
