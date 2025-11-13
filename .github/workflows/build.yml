@@ -125,6 +125,7 @@ jobs:
       - name: Build Python Analyzer
         run: |
           cd python-backend
+          Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
           pyinstaller python-analyzer.spec
           dir dist\
 
