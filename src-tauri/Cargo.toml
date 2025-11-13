@@ -1,6 +1,6 @@
 [package]
 name = "cocofile"
-version = "0.1.12"
+version = "0.1.13"
 description = "CocoFile - ファイル管理アシスタント"
 authors = ["muranaka-tenma"]
 edition = "2021"
