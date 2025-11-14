@@ -58,7 +58,7 @@ jobs:
         run: |
           cd python-backend
           rm -rf dist build
-          pyinstaller python-analyzer.spec
+          pyinstaller --clean python-analyzer.spec
           ls -lh dist/
 
       - name: Copy Python binary to Tauri binaries
@@ -125,8 +125,8 @@ jobs:
       - name: Build Python Analyzer
         run: |
           cd python-backend
-          Remove-Item -Recurse -Force dist, build -ErrorAction SilentlyContinue
-          pyinstaller python-analyzer.spec
+          Remove-Item -Recurse -Force -Path dist,build -ErrorAction SilentlyContinue
+          pyinstaller --clean python-analyzer.spec
           dir dist\
 
       - name: Copy Python binary to Tauri binaries
@@ -214,7 +214,7 @@ jobs:
         run: |
           cd python-backend
           rm -rf dist build
-          pyinstaller python-analyzer.spec
+          pyinstaller --clean python-analyzer.spec
           ls -lh dist/
 
       - name: Copy Python binary to Tauri binaries
