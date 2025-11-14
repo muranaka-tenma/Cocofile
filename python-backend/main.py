@@ -20,13 +20,27 @@ from typing import Dict, Any
 
 # stdout/stderrを完全アンバッファリングモードに設定（PyInstallerでのstdio通信のため）
 # PyInstallerでビルドされたexeでは、os.fdopen()が失敗する場合があるため、try-exceptで保護
-try:
-    # バッファサイズ0で即座にフラッシュされる
-    sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-    sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
-except (OSError, AttributeError, io.UnsupportedOperation, ValueError):
-    # PyInstallerまたは特殊な環境では、環境変数PYTHONUNBUFFERED=1に依存
-    pass
+def setup_unbuffered_io():
+    """stdout/stderrをアンバッファリングモードに設定"""
+    try:
+        # バッファサイズ0で即座にフラッシュされる
+        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+        sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
+        return True
+    except (OSError, AttributeError, io.UnsupportedOperation, ValueError) as e:
+        # PyInstallerまたは特殊な環境では失敗する可能性がある
+        # この場合、環境変数PYTHONUNBUFFERED=1に依存
+        try:
+            # エラー情報を記録（stdoutが利用不可の場合に備えてstderrに出力）
+            sys.stderr.write(f"[WARN] Failed to reopen stdout/stderr: {type(e).__name__}: {e}\n")
+            sys.stderr.write(f"[INFO] Using PYTHONUNBUFFERED environment variable instead\n")
+            sys.stderr.flush()
+        except:
+            pass
+        return False
+
+# I/O設定を実行
+setup_unbuffered_io()
 
 # 分析モジュールのインポート
 from analyzers.pdf_analyzer import analyze_pdf
@@ -45,12 +59,16 @@ def send_response(status: str, data: Any = None, error: str = None):
 
     # JSON出力（改行で区切り）
     try:
-        print(json.dumps(response, ensure_ascii=False))
+        json_str = json.dumps(response, ensure_ascii=False)
+        print(json_str)
         sys.stdout.flush()
-    except (OSError, ValueError) as e:
-        # PyInstallerまたは環境によってはstdoutのflush()が失敗する場合がある
-        # エラーを無視して続行
-        pass
+    except (OSError, ValueError, IOError) as e:
+        # デバッグ: stderrにエラー情報を出力
+        try:
+            sys.stderr.write(f"[ERROR] send_response failed: {type(e).__name__}: {e}\n")
+            sys.stderr.flush()
+        except:
+            pass
 
 
 def handle_command(command_data: Dict[str, Any]):
@@ -107,9 +125,6 @@ def handle_command(command_data: Dict[str, Any]):
 
 def main():
     """メインループ: stdinからコマンドを読み取り、処理する"""
-    # 起動完了通知
-    send_response("success", {"message": "Python backend started"})
-
     # コマンド処理ループ
     while True:
         try:

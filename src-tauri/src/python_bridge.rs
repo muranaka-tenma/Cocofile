@@ -107,15 +107,10 @@ impl PythonBridge {
         self.stdout = Some(BufReader::new(stdout));
         self.process = Some(child);
 
-        // 起動確認（最初のレスポンスを読み取り）
-        if let Ok(response) = self.read_response() {
-            if response["status"].as_str() == Some("success") {
-                println!("Python backend started successfully");
-                return Ok(());
-            }
-        }
+        debug_log("Python process started successfully");
+        println!("Python backend started successfully");
 
-        Err("Failed to confirm Python backend startup".to_string())
+        Ok(())
     }
 
     /// Pythonプロセスにコマンドを送信
