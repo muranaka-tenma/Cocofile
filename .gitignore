@@ -83,3 +83,4 @@ release/*.tar.gz
 release/*.msi
 release/*.dmg
 release/*.exe
+releases/
