@@ -208,7 +208,7 @@ fn remove_excluded_folder(app: tauri::AppHandle, folder_path: String) -> Result<
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
-        .plugin(tauri_plugin_global_shortcut::Builder::new().build())
+        // .plugin(tauri_plugin_global_shortcut::Builder::new().build())  // 一時的に無効化（デバッグ用）
         .setup(|app| {
             // ロガーを初期化
             let app_handle = app.handle().clone();
@@ -228,24 +228,9 @@ pub fn run() {
             // Pythonブリッジは遅延初期化（最初のAPI呼び出し時に初期化）
             logger::info("PythonBridge", "Will be initialized on first use (lazy initialization)");
 
-            // グローバルショートカットを登録 (Ctrl+Shift+F)
-            use tauri::Manager;
-            use tauri_plugin_global_shortcut::{GlobalShortcutExt, ShortcutState};
-
-            app.global_shortcut().on_shortcut("CmdOrCtrl+Shift+F", move |app, _shortcut, event| {
-                if event.state == ShortcutState::Pressed {
-                    if let Some(window) = app.get_webview_window("main") {
-                        if window.is_visible().unwrap_or(false) {
-                            let _ = window.hide();
-                        } else {
-                            let _ = window.show();
-                            let _ = window.set_focus();
-                        }
-                    }
-                }
-            }).map_err(|e| format!("Failed to register global shortcut: {}", e))?;
-
-            logger::info("Shortcut", "Global shortcut (Ctrl+Shift+F) registered");
+            // グローバルショートカット登録は一時的に無効化（デバッグ用）
+            // TODO: 起動問題が解決したら有効化する
+            logger::info("Shortcut", "Global shortcut registration skipped (debugging)");
 
             Ok(())
         })
