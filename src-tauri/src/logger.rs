@@ -41,12 +41,14 @@ pub fn initialize_logger(app: &tauri::AppHandle) -> Result<(), String> {
     let log_file_path = log_dir.join("cocofile.log");
 
     // グローバルにログファイルパスを保存
-    let mut log_file = LOG_FILE
-        .lock()
-        .map_err(|e| format!("Failed to lock LOG_FILE: {}", e))?;
-    *log_file = Some(log_file_path.clone());
+    {
+        let mut log_file = LOG_FILE
+            .lock()
+            .map_err(|e| format!("Failed to lock LOG_FILE: {}", e))?;
+        *log_file = Some(log_file_path.clone());
+    } // ← ここでlockを解放
 
-    // 初期化メッセージ
+    // 初期化メッセージ（lockを解放してから呼び出す）
     log(
         LogLevel::Info,
         "Logger",
