@@ -225,12 +225,8 @@ pub fn run() {
                 logger::info("Database", "Initialized successfully");
             }
 
-            // Pythonブリッジを初期化
-            if let Err(e) = python_bridge::initialize_python_bridge() {
-                logger::error("PythonBridge", &format!("Failed to initialize: {}", e));
-            } else {
-                logger::info("PythonBridge", "Initialized successfully");
-            }
+            // Pythonブリッジは遅延初期化（最初のAPI呼び出し時に初期化）
+            logger::info("PythonBridge", "Will be initialized on first use (lazy initialization)");
 
             // グローバルショートカットを登録 (Ctrl+Shift+F)
             use tauri::Manager;

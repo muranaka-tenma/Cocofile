@@ -275,12 +275,30 @@ pub fn initialize_python_bridge() -> Result<(), String> {
     Ok(())
 }
 
-/// Pythonブリッジを取得
+/// Pythonブリッジを取得（遅延初期化対応）
 pub fn get_python_bridge() -> Result<std::sync::MutexGuard<'static, Option<PythonBridge>>, String>
 {
-    PYTHON_BRIDGE
+    let mut bridge_lock = PYTHON_BRIDGE
         .lock()
-        .map_err(|e| format!("Failed to lock PYTHON_BRIDGE: {}", e))
+        .map_err(|e| format!("Failed to lock PYTHON_BRIDGE: {}", e))?;
+
+    // 未初期化の場合は自動的に初期化
+    if bridge_lock.is_none() {
+        debug_log("Python bridge not initialized, initializing now...");
+        let mut bridge = PythonBridge::new();
+        match bridge.start() {
+            Ok(()) => {
+                debug_log("Python bridge initialized successfully (lazy)");
+                *bridge_lock = Some(bridge);
+            }
+            Err(e) => {
+                debug_log(&format!("Failed to initialize Python bridge: {}", e));
+                return Err(format!("Failed to initialize Python bridge: {}", e));
+            }
+        }
+    }
+
+    Ok(bridge_lock)
 }
 
 /// Pythonバックエンドの実行コマンドを取得
