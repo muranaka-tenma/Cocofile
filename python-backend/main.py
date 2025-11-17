@@ -18,25 +18,22 @@ import json
 import traceback
 from typing import Dict, Any
 
-# stdout/stderrを完全アンバッファリングモードに設定（PyInstallerでのstdio通信のため）
+# stdout/stderrを行バッファリングモードに設定（PyInstallerでのstdio通信のため）
 # PyInstallerでビルドされたexeでは、os.fdopen()が失敗する場合があるため、try-exceptで保護
 def setup_unbuffered_io():
-    """stdout/stderrをアンバッファリングモードに設定"""
+    """stdout/stderrを行バッファリングモードに設定"""
     try:
-        # バッファサイズ0で即座にフラッシュされる
-        sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
-        sys.stderr = os.fdopen(sys.stderr.fileno(), 'w', 0)
+        # reconfigure()を使用して行バッファリングを有効化（Python 3.7+）
+        # line_buffering=Trueで、各print()後に自動的にflushされる
+        sys.stdout.reconfigure(line_buffering=True)
+        sys.stderr.reconfigure(line_buffering=True)
         return True
-    except (OSError, AttributeError, io.UnsupportedOperation, ValueError) as e:
-        # PyInstallerまたは特殊な環境では失敗する可能性がある
-        # この場合、環境変数PYTHONUNBUFFERED=1に依存
-        try:
-            # エラー情報を記録（stdoutが利用不可の場合に備えてstderrに出力）
-            sys.stderr.write(f"[WARN] Failed to reopen stdout/stderr: {type(e).__name__}: {e}\n")
-            sys.stderr.write(f"[INFO] Using PYTHONUNBUFFERED environment variable instead\n")
-            sys.stderr.flush()
-        except:
-            pass
+    except (OSError, AttributeError, ValueError) as e:
+        # エラーが発生した場合は、環境変数PYTHONUNBUFFERED=1に依存
+        # （Rust側でPYTHONUNBUFFERED=1を設定済み）
+        sys.stderr.write(f"[WARN] Failed to enable line buffering: {type(e).__name__}: {e}\n")
+        sys.stderr.write(f"[INFO] Relying on PYTHONUNBUFFERED environment variable\n")
+        sys.stderr.flush()
         return False
 
 # I/O設定を実行
