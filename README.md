@@ -3,7 +3,7 @@
 **個人利用ファイル管理アシスタント** - ローカル環境で動作するデスクトップアプリ
 
 ![License](https://img.shields.io/badge/license-MIT-blue.svg)
-![Status](https://img.shields.io/badge/status-v0.1.17--alpha-yellow.svg)
+![Status](https://img.shields.io/badge/status-v0.1.18--alpha-yellow.svg)
 ![Platform](https://img.shields.io/badge/platform-Linux%20%7C%20Windows%20%7C%20macOS-blue.svg)
 ![Build](https://img.shields.io/badge/build-passing-brightgreen.svg)
 ![Phase](https://img.shields.io/badge/phase-12%20testing-orange.svg)
@@ -27,26 +27,26 @@ PDF、Excel、Word、PowerPointファイルの内容を全文検索し、効率�
 
 ## 📥 ダウンロード
 
-### 🎉 v0.1.17-alpha リリース！
+### 🎉 v0.1.18-alpha リリース！
 
-**デッドロック問題を修正した最新版です。** v0.1.1-alphaで発生していたアプリケーション起動時のフリーズ問題を完全に解決しました。
+**Python backend起動問題を修正した最新版です。** v0.1.17以前で発生していたアプリケーション起動時のフリーズ問題を完全に解決しました。これにより、ダウンロードしたバイナリが初めて実際に動作するようになりました。
 
 全プラットフォーム（Linux/Windows/macOS）対応版です。
 
-### v0.1.17-alpha（2025年11月14日） - 最新
+### v0.1.18-alpha（2025年11月17日） - 最新
 
-**[リリースページ](https://github.com/muranaka-tenma/Cocofile/releases/tag/v0.1.17-alpha)**
+**[リリースページ](https://github.com/muranaka-tenma/Cocofile/releases/tag/v0.1.18-alpha)**
 
 #### 🐧 Linux
-- [.deb (Debian/Ubuntu)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.17-alpha/CocoFile_0.1.17_amd64.deb) - 53.4MB
-- [AppImage (全ディストリビューション)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.17-alpha/CocoFile_0.1.17_amd64.AppImage) - 125.9MB
+- [.deb (Debian/Ubuntu)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.18-alpha/CocoFile_0.1.18_amd64.deb) - 56.0MB
+- [AppImage (全ディストリビューション)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.18-alpha/CocoFile_0.1.18_amd64.AppImage) - 132.1MB
 
 #### 🪟 Windows
-- [MSI Installer](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.17-alpha/CocoFile_0.1.17_x64_en-US.msi) - 37.8MB
-- [NSIS Installer](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.17-alpha/CocoFile_0.1.17_x64-setup.exe) - 36.2MB
+- [MSI Installer](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.18-alpha/CocoFile_0.1.18_x64_en-US.msi) - 39.6MB
+- [NSIS Installer](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.18-alpha/CocoFile_0.1.18_x64-setup.exe) - 38.0MB
 
 #### 🍎 macOS
-- [DMG (Apple Silicon)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.17-alpha/CocoFile_0.1.17_aarch64.dmg) - 35.3MB
+- [DMG (Apple Silicon)](https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.18-alpha/CocoFile_0.1.18_aarch64.dmg) - 37.0MB
 
 **インストールガイド**: [docs/BETA_TEST_GUIDE.md](docs/BETA_TEST_GUIDE.md)
 
@@ -56,10 +56,10 @@ PDF、Excel、Word、PowerPointファイルの内容を全文検索し、効率�
 
 ```bash
 # ダウンロード
-wget https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.17-alpha/CocoFile_0.1.17_amd64.deb
+wget https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.18-alpha/CocoFile_0.1.18_amd64.deb
 
 # インストール
-sudo dpkg -i CocoFile_0.1.17_amd64.deb
+sudo dpkg -i CocoFile_0.1.18_amd64.deb
 
 # 依存関係の解決（必要な場合）
 sudo apt-get install -f
@@ -72,13 +72,13 @@ cocofile
 
 ```bash
 # ダウンロード
-wget https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.17-alpha/CocoFile_0.1.17_amd64.AppImage
+wget https://github.com/muranaka-tenma/Cocofile/releases/download/v0.1.18-alpha/CocoFile_0.1.18_amd64.AppImage
 
 # 実行権限を付与
-chmod +x CocoFile_0.1.17_amd64.AppImage
+chmod +x CocoFile_0.1.18_amd64.AppImage
 
 # 起動
-./CocoFile_0.1.17_amd64.AppImage
+./CocoFile_0.1.18_amd64.AppImage
 ```
 
 詳細なインストール手順は [ユーザーマニュアル](docs/USER_MANUAL.md) を参照してください。
