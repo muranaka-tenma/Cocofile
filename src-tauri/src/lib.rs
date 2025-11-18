@@ -206,36 +206,25 @@ fn remove_excluded_folder(app: tauri::AppHandle, folder_path: String) -> Result<
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    eprintln!("[DEBUG] run() called - creating Tauri builder");
+    tauri::Builder::default()
+        .plugin(tauri_plugin_shell::init())
+        .setup(|app| {
+            // ロガーを初期化
+            let app_handle = app.handle().clone();
+            if let Err(e) = logger::initialize_logger(&app_handle) {
+                eprintln!("Failed to initialize logger: {}", e);
+            }
 
-    let builder = tauri::Builder::default();
-    eprintln!("[DEBUG] Builder created");
+            // データベースを初期化
+            if let Err(e) = database::initialize_database(&app_handle) {
+                logger::error("Database", &format!("Failed to initialize: {}", e));
+            } else {
+                logger::info("Database", "Initialized successfully");
+            }
 
-    let builder = builder.plugin(tauri_plugin_shell::init());
-    eprintln!("[DEBUG] Shell plugin registered");
-
-    // .plugin(tauri_plugin_global_shortcut::Builder::new().build())  // 一時的に無効化（デバッグ用）
-
-    let builder = builder.setup(|app| {
-        // 最小限の初期化のみ（デバッグ用）
-        eprintln!("[DEBUG] Setup callback started");
-
-        // ロガーのみ初期化
-        let app_handle = app.handle().clone();
-        eprintln!("[DEBUG] App handle cloned");
-
-        if let Err(e) = logger::initialize_logger(&app_handle) {
-            eprintln!("[DEBUG] Failed to initialize logger: {}", e);
-        } else {
-            eprintln!("[DEBUG] Logger initialized successfully");
-        }
-
-        eprintln!("[DEBUG] Setup callback completed");
-        Ok(())
-    });
-    eprintln!("[DEBUG] Setup registered");
-
-    let builder = builder.invoke_handler(tauri::generate_handler![
+            Ok(())
+        })
+        .invoke_handler(tauri::generate_handler![
             initialize_db,
             get_db_stats,
             python_health_check,
@@ -271,13 +260,7 @@ pub fn run() {
             organization_manager::delete_user_rule,
             organization_manager::get_move_history,
             organization_manager::detect_cloud_file_status
-        ]);
-    eprintln!("[DEBUG] Invoke handler registered");
-
-    eprintln!("[DEBUG] About to call builder.run()");
-    let result = builder.run(tauri::generate_context!());
-    eprintln!("[DEBUG] builder.run() returned");
-
-    result.expect("error while running tauri application");
-    eprintln!("[DEBUG] Application exited normally");
+        ])
+        .run(tauri::generate_context!())
+        .expect("error while running tauri application");
 }
