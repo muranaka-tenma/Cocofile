@@ -1,6 +1,6 @@
 {
   "name": "cocofile",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "description": "CocoFile - ファイル管理アシスタント",
   "private": true,
   "scripts": {
