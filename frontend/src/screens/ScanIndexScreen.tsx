@@ -2,6 +2,7 @@
 // Scan execution, index statistics, and duplicate file management
 
 import React, { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
 import {
   RefreshCw,
   Trash2,
@@ -9,6 +10,7 @@ import {
   FileText,
   Loader2,
   AlertCircle,
+  HardDrive,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useScanData } from '@/hooks/useScanData';
@@ -29,7 +31,20 @@ export const ScanIndexScreen: React.FC = () => {
 
   const [isCleaningUp, setIsCleaningUp] = useState(false);
   const [isRebuilding, setIsRebuilding] = useState(false);
+  const [isFullScanning, setIsFullScanning] = useState(false);
   const [operationMessage, setOperationMessage] = useState<string | null>(null);
+
+  // Handle full system scan
+  const handleFullScan = async () => {
+    try {
+      setIsFullScanning(true);
+      setOperationMessage('PC全体のスキャンを開始しました。右下に進捗が表示されます。');
+      await invoke('scan_all_drives');
+    } catch (err) {
+      setOperationMessage('PC全体スキャンの開始に失敗しました');
+      setIsFullScanning(false);
+    }
+  };
 
   // Format file size
   const formatFileSize = (bytes: number): string => {
@@ -141,15 +156,29 @@ export const ScanIndexScreen: React.FC = () => {
           </h2>
           <div className="flex gap-3 mb-4">
             <Button
+              onClick={handleFullScan}
+              disabled={isScanning || isFullScanning}
+              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
+            >
+              <HardDrive
+                className={`w-5 h-5 ${isFullScanning ? 'animate-pulse' : ''}`}
+              />
+              PC全体をスキャン
+            </Button>
+            <Button
               onClick={handleStartScan}
-              disabled={isScanning}
+              disabled={isScanning || isFullScanning}
+              variant="secondary"
               className="flex items-center gap-2"
             >
               <RefreshCw
                 className={`w-5 h-5 ${isScanning ? 'animate-spin' : ''}`}
               />
-              手動スキャン開始
+              フォルダ指定スキャン
             </Button>
+          </div>
+          <div className="text-xs text-gray-500 mb-4">
+            PC全体をスキャン: すべてのドライブを自動検出してスキャン（推奨）
           </div>
 
           {/* Scan Progress */}
