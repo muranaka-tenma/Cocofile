@@ -1,8 +1,11 @@
 use crate::database;
 use crate::python_bridge;
+use crate::settings_manager;
 use rusqlite::Connection;
 use std::fs;
 use std::path::Path;
+use std::sync::{Arc, Mutex};
+use tauri::Emitter;
 
 /// ファイルスキャン結果
 #[derive(Debug, serde::Serialize)]
@@ -325,4 +328,238 @@ pub struct SearchResult {
     pub file_size: i64,
     pub snippet: Option<String>,
     pub rank: Option<f64>,
+}
+
+/// スキャン進捗イベント
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ScanProgress {
+    pub current_drive: String,
+    pub current_folder: String,
+    pub total_files: usize,
+    pub processed_files: usize,
+    pub status: String, // "scanning" | "completed" | "error"
+}
+
+/// 全ドライブを検出（Windows用）
+pub fn get_all_drives() -> Vec<String> {
+    let mut drives = Vec::new();
+
+    // A:からZ:までチェック
+    for letter in b'A'..=b'Z' {
+        let drive = format!("{}:\\", letter as char);
+        let path = Path::new(&drive);
+        if path.exists() && path.is_dir() {
+            drives.push(drive);
+        }
+    }
+
+    crate::logger::info("FileScanner", &format!("Detected drives: {:?}", drives));
+    drives
+}
+
+/// 全ドライブをバックグラウンドでスキャン
+pub fn scan_all_drives(app: tauri::AppHandle) -> Result<(), String> {
+    let app_clone = app.clone();
+
+    // バックグラウンドスレッドでスキャン実行
+    std::thread::spawn(move || {
+        crate::logger::info("FileScanner", "Starting full system scan...");
+
+        // 設定から除外フォルダを取得
+        let settings = match settings_manager::get_settings(&app_clone) {
+            Ok(s) => s,
+            Err(e) => {
+                crate::logger::error("FileScanner", &format!("Failed to get settings: {}", e));
+                return;
+            }
+        };
+
+        let excluded_folders: Vec<String> = settings.excluded_folders
+            .iter()
+            .map(|f| f.to_lowercase())
+            .collect();
+
+        let excluded_extensions: Vec<String> = settings.excluded_extensions
+            .iter()
+            .map(|e| e.to_lowercase())
+            .collect();
+
+        // 全ドライブを取得
+        let drives = get_all_drives();
+
+        let total_files = Arc::new(Mutex::new(0usize));
+        let processed_files = Arc::new(Mutex::new(0usize));
+
+        for drive in drives {
+            // 進捗通知
+            let progress = ScanProgress {
+                current_drive: drive.clone(),
+                current_folder: drive.clone(),
+                total_files: *total_files.lock().unwrap(),
+                processed_files: *processed_files.lock().unwrap(),
+                status: "scanning".to_string(),
+            };
+            let _ = app_clone.emit("scan-progress", progress);
+
+            // ドライブをスキャン
+            if let Err(e) = scan_drive_with_exclusions(
+                &app_clone,
+                &drive,
+                &excluded_folders,
+                &excluded_extensions,
+                total_files.clone(),
+                processed_files.clone(),
+            ) {
+                crate::logger::error("FileScanner", &format!("Error scanning {}: {}", drive, e));
+            }
+        }
+
+        // 完了通知
+        let final_progress = ScanProgress {
+            current_drive: "".to_string(),
+            current_folder: "".to_string(),
+            total_files: *total_files.lock().unwrap(),
+            processed_files: *processed_files.lock().unwrap(),
+            status: "completed".to_string(),
+        };
+        let _ = app_clone.emit("scan-progress", final_progress);
+
+        crate::logger::info(
+            "FileScanner",
+            &format!(
+                "Full system scan completed: {} files processed out of {}",
+                *processed_files.lock().unwrap(),
+                *total_files.lock().unwrap()
+            ),
+        );
+    });
+
+    Ok(())
+}
+
+/// ドライブを除外設定付きでスキャン
+fn scan_drive_with_exclusions(
+    app: &tauri::AppHandle,
+    drive: &str,
+    excluded_folders: &[String],
+    excluded_extensions: &[String],
+    total_files: Arc<Mutex<usize>>,
+    processed_files: Arc<Mutex<usize>>,
+) -> Result<(), String> {
+    let conn = database::get_connection(app)?;
+    let path = Path::new(drive);
+
+    scan_directory_with_exclusions(
+        app,
+        &conn,
+        path,
+        excluded_folders,
+        excluded_extensions,
+        total_files,
+        processed_files,
+    )
+}
+
+/// ディレクトリを除外設定付きで再帰スキャン
+fn scan_directory_with_exclusions(
+    app: &tauri::AppHandle,
+    conn: &Connection,
+    path: &Path,
+    excluded_folders: &[String],
+    excluded_extensions: &[String],
+    total_files: Arc<Mutex<usize>>,
+    processed_files: Arc<Mutex<usize>>,
+) -> Result<(), String> {
+    // 除外フォルダチェック
+    let path_str = path.to_string_lossy().to_lowercase();
+    for excluded in excluded_folders {
+        if path_str.starts_with(excluded) || path_str.contains(excluded) {
+            return Ok(());
+        }
+    }
+
+    // 特殊フォルダを除外
+    let folder_name = path.file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    let skip_folders = [
+        "node_modules", ".git", ".svn", "__pycache__",
+        "venv", ".venv", "target", "build", "dist",
+        "$recycle.bin", "system volume information",
+        "appdata", "programdata"
+    ];
+
+    if skip_folders.contains(&folder_name.as_str()) {
+        return Ok(());
+    }
+
+    let entries = match fs::read_dir(path) {
+        Ok(e) => e,
+        Err(_) => return Ok(()), // アクセス拒否等は無視
+    };
+
+    for entry in entries.flatten() {
+        let entry_path = entry.path();
+
+        if entry_path.is_dir() {
+            // 再帰的にスキャン
+            let _ = scan_directory_with_exclusions(
+                app,
+                conn,
+                &entry_path,
+                excluded_folders,
+                excluded_extensions,
+                total_files.clone(),
+                processed_files.clone(),
+            );
+        } else if entry_path.is_file() {
+            // 拡張子チェック
+            if let Some(ext) = entry_path.extension() {
+                let ext_str = ext.to_string_lossy().to_lowercase();
+                let ext_with_dot = format!(".{}", ext_str);
+
+                // 除外拡張子チェック
+                if excluded_extensions.contains(&ext_with_dot) {
+                    continue;
+                }
+
+                *total_files.lock().unwrap() += 1;
+
+                // 対応ファイル形式のみ処理
+                if matches!(ext_str.as_str(), "pdf" | "xlsx" | "xls" | "docx" | "pptx" | "txt" | "md") {
+                    if process_file(conn, &entry_path).is_ok() {
+                        *processed_files.lock().unwrap() += 1;
+                    }
+
+                    // 100ファイルごとに進捗通知
+                    let processed = *processed_files.lock().unwrap();
+                    if processed % 100 == 0 {
+                        let progress = ScanProgress {
+                            current_drive: path.to_string_lossy().chars().take(3).collect(),
+                            current_folder: path.to_string_lossy().to_string(),
+                            total_files: *total_files.lock().unwrap(),
+                            processed_files: processed,
+                            status: "scanning".to_string(),
+                        };
+                        let _ = app.emit("scan-progress", progress);
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(())
+}
+
+/// 初回起動かどうかを確認
+pub fn is_first_run(app: &tauri::AppHandle) -> Result<bool, String> {
+    let conn = database::get_connection(app)?;
+
+    let count: i64 = conn
+        .query_row("SELECT COUNT(*) FROM file_metadata", [], |row| row.get(0))
+        .map_err(|e| format!("Failed to check file count: {}", e))?;
+
+    Ok(count == 0)
 }

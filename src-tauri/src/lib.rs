@@ -90,6 +90,24 @@ fn search_files(app: tauri::AppHandle, keyword: String) -> Result<Vec<file_scann
     file_scanner::search_files(&app, &keyword)
 }
 
+/// 全ドライブを取得
+#[tauri::command]
+fn get_all_drives() -> Vec<String> {
+    file_scanner::get_all_drives()
+}
+
+/// 全ドライブをバックグラウンドでスキャン
+#[tauri::command]
+fn scan_all_drives(app: tauri::AppHandle) -> Result<(), String> {
+    file_scanner::scan_all_drives(app)
+}
+
+/// 初回起動かどうかを確認
+#[tauri::command]
+fn is_first_run(app: tauri::AppHandle) -> Result<bool, String> {
+    file_scanner::is_first_run(&app)
+}
+
 // ========== タグ管理API ==========
 
 /// タグ一覧を取得
@@ -234,6 +252,9 @@ pub fn run() {
             analyze_ppt_file,
             scan_directory,
             search_files,
+            get_all_drives,
+            scan_all_drives,
+            is_first_run,
             get_tags,
             create_tag,
             update_tag,
