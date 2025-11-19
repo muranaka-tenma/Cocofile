@@ -196,6 +196,7 @@ fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
             "xlsx" | "xls" => bridge.analyze_excel(&file_path),
             "docx" => bridge.analyze_word(&file_path),
             "pptx" => bridge.analyze_ppt(&file_path),
+            "txt" | "md" => bridge.analyze_text(&file_path),
             _ => Err(format!("Unsupported file type: {}", file_type)),
         };
 

@@ -44,6 +44,7 @@ from analyzers.pdf_analyzer import analyze_pdf
 from analyzers.excel_analyzer import analyze_excel
 from analyzers.word_analyzer import analyze_word
 from analyzers.ppt_analyzer import analyze_ppt
+from analyzers.text_analyzer import analyze_text
 
 
 def send_response(status: str, data: Any = None, error: str = None):
@@ -114,6 +115,16 @@ def handle_command(command_data: Dict[str, Any]):
             return
 
         result = analyze_ppt(file_path)
+        send_response("success", result)
+
+    elif command == "analyze_text":
+        # テキストファイル分析 (.txt, .md)
+        file_path = command_data.get("path")
+        if not file_path:
+            send_response("error", error="Missing 'path' parameter")
+            return
+
+        result = analyze_text(file_path)
         send_response("success", result)
 
     else:

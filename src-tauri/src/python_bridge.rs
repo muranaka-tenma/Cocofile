@@ -188,6 +188,11 @@ impl PythonBridge {
         self.analyze_file("analyze_ppt", file_path)
     }
 
+    /// テキストファイルを分析 (.txt, .md)
+    pub fn analyze_text(&mut self, file_path: &str) -> Result<AnalyzeResult, String> {
+        self.analyze_file("analyze_text", file_path)
+    }
+
     /// ファイルを分析（内部共通処理）
     fn analyze_file(&mut self, command: &str, file_path: &str) -> Result<AnalyzeResult, String> {
         let command_json = json!({
