@@ -23,22 +23,22 @@ function App() {
   const { currentScreen } = useNavigationStore();
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
-  const [showFirstRunDialog, setShowFirstRunDialog] = useState(false);
 
-  // 初回起動チェックと自動スキャン
+  // アプリ起動時に自動でスキャン開始
   useEffect(() => {
-    const checkFirstRun = async () => {
+    const startAutoScan = async () => {
       try {
-        const firstRun = await invoke<boolean>('is_first_run');
-        if (firstRun) {
-          setShowFirstRunDialog(true);
-        }
+        // 少し待ってからスキャン開始（UIが安定してから）
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        setIsScanning(true);
+        await invoke('scan_all_drives');
       } catch (error) {
-        console.error('Failed to check first run:', error);
+        console.error('Failed to start auto scan:', error);
+        setIsScanning(false);
       }
     };
 
-    checkFirstRun();
+    startAutoScan();
 
     // スキャン進捗イベントをリッスン
     const unlisten = listen<ScanProgress>('scan-progress', (event) => {
@@ -53,18 +53,6 @@ function App() {
       unlisten.then(fn => fn());
     };
   }, []);
-
-  // 全ドライブスキャンを開始
-  const startFullScan = async () => {
-    try {
-      setShowFirstRunDialog(false);
-      setIsScanning(true);
-      await invoke('scan_all_drives');
-    } catch (error) {
-      console.error('Failed to start scan:', error);
-      setIsScanning(false);
-    }
-  };
 
   // Simple screen router
   const renderScreen = () => {
@@ -89,36 +77,6 @@ function App() {
       {renderScreen()}
       {/* Dev navigation - remove in production */}
       {import.meta.env.DEV && <DevNavigation />}
-
-      {/* 初回起動ダイアログ */}
-      {showFirstRunDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md mx-4 shadow-xl">
-            <h2 className="text-xl font-bold mb-4">CocoFileへようこそ！</h2>
-            <p className="text-gray-600 dark:text-gray-300 mb-4">
-              PC内のファイルをスキャンして、すぐに検索できるようにします。
-              初回スキャンには時間がかかる場合があります。
-            </p>
-            <p className="text-sm text-gray-500 mb-4">
-              ※ システムフォルダ（Windows、Program Files等）は自動的に除外されます
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                onClick={() => setShowFirstRunDialog(false)}
-                className="px-4 py-2 text-gray-600 hover:text-gray-800"
-              >
-                後で
-              </button>
-              <button
-                onClick={startFullScan}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-              >
-                スキャン開始
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* スキャン進捗表示 */}
       {(isScanning || scanProgress) && (
