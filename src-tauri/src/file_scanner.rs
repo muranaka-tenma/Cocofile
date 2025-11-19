@@ -533,9 +533,9 @@ fn scan_directory_with_exclusions(
                         *processed_files.lock().unwrap() += 1;
                     }
 
-                    // 100ファイルごとに進捗通知
+                    // 10ファイルごとに進捗通知（より頻繁に更新）
                     let processed = *processed_files.lock().unwrap();
-                    if processed % 100 == 0 {
+                    if processed % 10 == 0 {
                         let progress = ScanProgress {
                             current_drive: path.to_string_lossy().chars().take(3).collect(),
                             current_folder: path.to_string_lossy().to_string(),

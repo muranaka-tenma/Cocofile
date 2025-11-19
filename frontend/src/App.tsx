@@ -122,23 +122,37 @@ function App() {
 
       {/* スキャン進捗表示 */}
       {(isScanning || scanProgress) && (
-        <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg z-40 max-w-sm">
-          <div className="flex items-center gap-3">
-            {isScanning && (
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent"></div>
+        <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg z-40 w-80 border border-gray-200">
+          <div className="flex items-start gap-3">
+            {isScanning && scanProgress?.status !== 'completed' && (
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent flex-shrink-0 mt-0.5"></div>
             )}
-            <div className="flex-1">
+            {scanProgress?.status === 'completed' && (
+              <div className="text-green-500 flex-shrink-0">✓</div>
+            )}
+            <div className="flex-1 min-w-0">
               {scanProgress?.status === 'completed' ? (
-                <p className="text-green-600 font-medium">スキャン完了！</p>
+                <>
+                  <p className="text-green-600 font-medium">スキャン完了！</p>
+                  <p className="text-sm text-gray-600">
+                    {scanProgress.processed_files.toLocaleString()} ファイルをインデックス化しました
+                  </p>
+                </>
               ) : (
-                <p className="text-sm font-medium">
-                  スキャン中: {scanProgress?.current_drive || '...'}
-                </p>
-              )}
-              {scanProgress && (
-                <p className="text-xs text-gray-500">
-                  {scanProgress.processed_files.toLocaleString()} / {scanProgress.total_files.toLocaleString()} ファイル
-                </p>
+                <>
+                  <p className="text-sm font-medium mb-1">
+                    PC全体をスキャン中...
+                  </p>
+                  <p className="text-xs text-gray-500 mb-1">
+                    ドライブ: {scanProgress?.current_drive || '検出中...'}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate" title={scanProgress?.current_folder}>
+                    {scanProgress?.current_folder ? `📁 ${scanProgress.current_folder.split('\\').slice(-2).join('\\')}` : '準備中...'}
+                  </p>
+                  <p className="text-sm font-medium text-blue-600 mt-2">
+                    {scanProgress?.processed_files?.toLocaleString() || 0} ファイル処理済み
+                  </p>
+                </>
               )}
             </div>
           </div>
