@@ -94,6 +94,48 @@ fn scan_directory_recursive(
     Ok(())
 }
 
+/// ファイルのメタデータのみを登録（内容分析なし）
+fn register_file_metadata(conn: &Connection, path: &Path) -> Result<(), String> {
+    let file_path = path
+        .to_str()
+        .ok_or("Invalid file path")?
+        .to_string();
+
+    let file_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .ok_or("Invalid file name")?
+        .to_string();
+
+    let file_type = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+
+    let metadata = fs::metadata(path)
+        .map_err(|e| format!("Failed to get file metadata: {}", e))?;
+
+    let file_size = metadata.len() as i64;
+    let now = chrono::Utc::now().to_rfc3339();
+
+    conn.execute(
+        "INSERT OR IGNORE INTO file_metadata
+         (file_path, file_name, file_type, file_size, indexed_at)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        (
+            &file_path,
+            &file_name,
+            &file_type,
+            file_size,
+            &now,
+        ),
+    )
+    .map_err(|e| format!("Failed to insert file metadata: {}", e))?;
+
+    Ok(())
+}
+
 /// ファイルを処理してデータベースに登録
 fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
     let file_path = path
@@ -516,36 +558,42 @@ fn scan_directory_with_exclusions(
             );
         } else if entry_path.is_file() {
             // 拡張子チェック
-            if let Some(ext) = entry_path.extension() {
-                let ext_str = ext.to_string_lossy().to_lowercase();
-                let ext_with_dot = format!(".{}", ext_str);
+            let ext_str = entry_path.extension()
+                .and_then(|e| e.to_str())
+                .map(|s| s.to_lowercase())
+                .unwrap_or_default();
 
-                // 除外拡張子チェック
-                if excluded_extensions.contains(&ext_with_dot) {
-                    continue;
+            let ext_with_dot = format!(".{}", ext_str);
+
+            // 除外拡張子チェック
+            if excluded_extensions.contains(&ext_with_dot) {
+                continue;
+            }
+
+            *total_files.lock().unwrap() += 1;
+
+            // 全てのファイルをメタデータに登録（ファイル名検索可能）
+            let _ = register_file_metadata(conn, &entry_path);
+
+            // 対応ファイル形式のみ内容分析
+            if matches!(ext_str.as_str(), "pdf" | "xlsx" | "xls" | "docx" | "pptx" | "txt" | "md") {
+                if process_file(conn, &entry_path).is_ok() {
+                    *processed_files.lock().unwrap() += 1;
                 }
+            }
 
-                *total_files.lock().unwrap() += 1;
-
-                // 対応ファイル形式のみ処理
-                if matches!(ext_str.as_str(), "pdf" | "xlsx" | "xls" | "docx" | "pptx" | "txt" | "md") {
-                    if process_file(conn, &entry_path).is_ok() {
-                        *processed_files.lock().unwrap() += 1;
-                    }
-
-                    // 10ファイルごとに進捗通知（より頻繁に更新）
-                    let processed = *processed_files.lock().unwrap();
-                    if processed % 10 == 0 {
-                        let progress = ScanProgress {
-                            current_drive: path.to_string_lossy().chars().take(3).collect(),
-                            current_folder: path.to_string_lossy().to_string(),
-                            total_files: *total_files.lock().unwrap(),
-                            processed_files: processed,
-                            status: "scanning".to_string(),
-                        };
-                        let _ = app.emit("scan-progress", progress);
-                    }
-                }
+            // 50ファイルごとに進捗通知
+            let total = *total_files.lock().unwrap();
+            let processed = *processed_files.lock().unwrap();
+            if total % 50 == 0 {
+                let progress = ScanProgress {
+                    current_drive: path.to_string_lossy().chars().take(3).collect(),
+                    current_folder: path.to_string_lossy().to_string(),
+                    total_files: total,
+                    processed_files: processed,
+                    status: "scanning".to_string(),
+                };
+                let _ = app.emit("scan-progress", progress);
             }
         }
     }
