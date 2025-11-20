@@ -521,9 +521,9 @@ fn scan_directory_with_exclusions(
         }
     }
 
-    // デバッグ: スキャン中のディレクトリをログ
+    // デバッグ: スキャン中のディレクトリをログ（最初の20回、その後は100ごと）
     let total = *total_files.lock().unwrap();
-    if total % 100 == 0 {
+    if total <= 20 || total % 100 == 0 {
         crate::logger::info("FileScanner", &format!("Scanning: {} (total: {})", path.display(), total));
     }
 
@@ -615,10 +615,11 @@ fn scan_directory_with_exclusions(
                 }
             }
 
-            // 50ファイルごとに進捗通知
+            // 進捗通知（最初は頻繁に、その後は50ファイルごと）
             let total = *total_files.lock().unwrap();
             let processed = *processed_files.lock().unwrap();
-            if total % 50 == 0 {
+            // 最初の10ファイルは毎回、その後は50ごと
+            if total <= 10 || total % 50 == 0 {
                 let progress = ScanProgress {
                     current_drive: path.to_string_lossy().chars().take(3).collect(),
                     current_folder: path.to_string_lossy().to_string(),
