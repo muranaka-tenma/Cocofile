@@ -383,16 +383,27 @@ pub struct ScanProgress {
     pub status: String, // "scanning" | "completed" | "error"
 }
 
-/// 全ドライブを検出（Windows用）
+/// 全ドライブを検出（Windows/Linux対応）
 pub fn get_all_drives() -> Vec<String> {
     let mut drives = Vec::new();
 
-    // A:からZ:までチェック
-    for letter in b'A'..=b'Z' {
-        let drive = format!("{}:\\", letter as char);
-        let path = Path::new(&drive);
-        if path.exists() && path.is_dir() {
-            drives.push(drive);
+    #[cfg(target_os = "windows")]
+    {
+        // Windows: A:からZ:までチェック
+        for letter in b'A'..=b'Z' {
+            let drive = format!("{}:\\", letter as char);
+            let path = Path::new(&drive);
+            if path.exists() && path.is_dir() {
+                drives.push(drive);
+            }
+        }
+    }
+
+    #[cfg(not(target_os = "windows"))]
+    {
+        // Linux/macOS: ホームディレクトリをスキャン
+        if let Some(home) = dirs::home_dir() {
+            drives.push(home.to_string_lossy().to_string());
         }
     }
 
