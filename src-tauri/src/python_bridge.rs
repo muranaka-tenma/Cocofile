@@ -3,8 +3,9 @@ use serde_json::{json, Value};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
-use std::sync::Mutex;
+use std::sync::{mpsc, Mutex};
 use std::fs::{OpenOptions, create_dir_all};
+use std::time::Duration;
 
 /// デバッグログをファイルに書き込む
 fn debug_log(message: &str) {
@@ -137,20 +138,50 @@ impl PythonBridge {
         }
     }
 
-    /// Pythonプロセスからレスポンスを読み取り
+    /// Pythonプロセスからレスポンスを読み取り（30秒タイムアウト）
     fn read_response(&mut self) -> Result<Value, String> {
-        if let Some(ref mut stdout) = self.stdout {
+        if self.stdout.is_none() {
+            return Err("Python process is not running".to_string());
+        }
+
+        // stdoutを一時的に取り出す
+        let stdout = self.stdout.take().unwrap();
+
+        // チャンネルでタイムアウト処理
+        let (tx, rx) = mpsc::channel();
+
+        std::thread::spawn(move || {
+            let mut stdout = stdout;
             let mut line = String::new();
-            stdout
-                .read_line(&mut line)
-                .map_err(|e| format!("Failed to read from stdout: {}", e))?;
+            let result = stdout.read_line(&mut line);
+            let _ = tx.send((stdout, result, line));
+        });
 
-            let response: Value = serde_json::from_str(&line)
-                .map_err(|e| format!("Failed to parse JSON response: {}", e))?;
+        // 30秒タイムアウト
+        match rx.recv_timeout(Duration::from_secs(30)) {
+            Ok((stdout_back, result, line)) => {
+                // stdoutを戻す
+                self.stdout = Some(stdout_back);
 
-            Ok(response)
-        } else {
-            Err("Python process is not running".to_string())
+                result.map_err(|e| format!("Failed to read from stdout: {}", e))?;
+
+                if line.is_empty() {
+                    return Err("Empty response from Python".to_string());
+                }
+
+                let response: Value = serde_json::from_str(&line)
+                    .map_err(|e| format!("Failed to parse JSON response: {} (raw: {})", e, line.trim()))?;
+
+                Ok(response)
+            }
+            Err(mpsc::RecvTimeoutError::Timeout) => {
+                debug_log("ERROR: Python response timeout (30 seconds)");
+                // stdoutは失われる - Pythonプロセスを再起動する必要がある
+                Err("Python response timeout after 30 seconds".to_string())
+            }
+            Err(mpsc::RecvTimeoutError::Disconnected) => {
+                Err("Python reader thread disconnected unexpectedly".to_string())
+            }
         }
     }
 

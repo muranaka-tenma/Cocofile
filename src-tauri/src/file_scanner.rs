@@ -186,8 +186,12 @@ fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
     .map_err(|e| format!("Failed to insert file metadata: {}", e))?;
 
     // Pythonバックエンドでファイル分析
+    crate::logger::info("FileScanner", &format!("Getting Python bridge for: {}", file_name));
+
     let mut bridge_lock = python_bridge::get_python_bridge()
         .map_err(|e| format!("Failed to get Python bridge: {}", e))?;
+
+    crate::logger::info("FileScanner", &format!("Analyzing file: {} (type: {})", file_name, file_type));
 
     if let Some(ref mut bridge) = *bridge_lock {
         // ファイルタイプに応じて適切な分析関数を呼び出す
@@ -202,6 +206,8 @@ fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
 
         match analyze_result {
             Ok(result) => {
+                crate::logger::info("FileScanner", &format!("Analysis success: {} ({} chars)", file_name, result.text.len()));
+
                 // N-gram処理してFTS5に登録
                 let ngram_text = ngram_tokenize(&result.text);
 
@@ -211,22 +217,17 @@ fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
                 )
                 .map_err(|e| format!("Failed to insert into FTS5: {}", e))?;
 
-                println!(
-                    "Successfully indexed: {} ({} bytes of text)",
-                    file_name,
-                    result.text.len()
-                );
+                crate::logger::info("FileScanner", &format!("Indexed: {} ({} bytes)", file_name, result.text.len()));
             }
             Err(e) => {
                 // 分析失敗時もメタデータは登録済み（ファイル名検索可能）
-                eprintln!(
-                    "[WARN] Failed to analyze file '{}' ({}): {}",
-                    file_name, file_type, e
-                );
-                // エラー詳細をログに記録（将来的にファイルに保存）
+                crate::logger::error("FileScanner", &format!("Analysis failed: {} - {}", file_name, e));
+                // エラー詳細をログに記録
                 log_analysis_error(&file_path, &file_type, &e);
             }
         }
+    } else {
+        crate::logger::error("FileScanner", "Python bridge is None");
     }
 
     Ok(())
