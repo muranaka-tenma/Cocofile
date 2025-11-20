@@ -175,8 +175,15 @@ impl PythonBridge {
                 Ok(response)
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {
-                debug_log("ERROR: Python response timeout (30 seconds)");
-                // stdoutは失われる - Pythonプロセスを再起動する必要がある
+                debug_log("ERROR: Python response timeout (30 seconds) - killing process for restart");
+                // プロセスを強制終了してクリア（次回呼び出し時に自動再起動）
+                if let Some(ref mut process) = self.process {
+                    let _ = process.kill();
+                    let _ = process.wait();
+                }
+                self.process = None;
+                self.stdin = None;
+                self.stdout = None;
                 Err("Python response timeout after 30 seconds".to_string())
             }
             Err(mpsc::RecvTimeoutError::Disconnected) => {
