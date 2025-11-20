@@ -546,13 +546,20 @@ fn scan_directory_with_exclusions(
 
     let entries = match fs::read_dir(path) {
         Ok(e) => e,
-        Err(_) => return Ok(()), // アクセス拒否等は無視
+        Err(e) => {
+            crate::logger::error("FileScanner", &format!("Cannot read directory {}: {}", path.display(), e));
+            return Ok(()); // アクセス拒否等は無視
+        }
     };
+
+    let mut file_count_in_dir = 0;
+    let mut dir_count_in_dir = 0;
 
     for entry in entries.flatten() {
         let entry_path = entry.path();
 
         if entry_path.is_dir() {
+            dir_count_in_dir += 1;
             // 再帰的にスキャン
             let _ = scan_directory_with_exclusions(
                 app,
@@ -564,6 +571,8 @@ fn scan_directory_with_exclusions(
                 processed_files.clone(),
             );
         } else if entry_path.is_file() {
+            file_count_in_dir += 1;
+
             // 拡張子チェック
             let ext_str = entry_path.extension()
                 .and_then(|e| e.to_str())
@@ -578,6 +587,12 @@ fn scan_directory_with_exclusions(
             }
 
             *total_files.lock().unwrap() += 1;
+
+            // デバッグ: 最初の100ファイルをログ
+            let current_total = *total_files.lock().unwrap();
+            if current_total <= 100 {
+                crate::logger::info("FileScanner", &format!("Found file #{}: {}", current_total, entry_path.display()));
+            }
 
             // 全てのファイルをメタデータに登録（ファイル名検索可能）
             let _ = register_file_metadata(conn, &entry_path);
