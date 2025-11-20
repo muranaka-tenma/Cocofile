@@ -70,6 +70,7 @@ export class TauriService {
    * データベース統計情報を取得
    */
   static async getDatabaseStats(): Promise<DatabaseStats> {
+    console.log('[TauriService] getDatabaseStats called, isTauriEnv:', isTauriEnvironment());
     if (!isTauriEnvironment()) {
       console.warn('[DEV] Using mock database stats (not in Tauri environment)');
       return {
@@ -78,7 +79,10 @@ export class TauriService {
         db_size_bytes: 5242880, // 5MB
       };
     }
-    return await invoke<DatabaseStats>('get_db_stats');
+    console.log('[TauriService] Calling get_db_stats command');
+    const result = await invoke<DatabaseStats>('get_db_stats');
+    console.log('[TauriService] get_db_stats result:', result);
+    return result;
   }
 
   /**
