@@ -20,7 +20,18 @@ fn initialize_db(app: tauri::AppHandle) -> Result<String, String> {
 /// データベース統計情報を取得
 #[tauri::command]
 fn get_db_stats(app: tauri::AppHandle) -> Result<database::DatabaseStats, String> {
-    database::get_database_stats(&app)
+    logger::info("Command", "get_db_stats called");
+    let result = database::get_database_stats(&app);
+    match &result {
+        Ok(stats) => {
+            logger::info("Command", &format!("get_db_stats returned: {} files, {} tags, {} bytes",
+                stats.total_files, stats.total_tags, stats.db_size_bytes));
+        },
+        Err(e) => {
+            logger::error("Command", &format!("get_db_stats error: {}", e));
+        }
+    }
+    result
 }
 
 /// Pythonブリッジのヘルスチェック
