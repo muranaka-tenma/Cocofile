@@ -246,22 +246,35 @@ fn log_analysis_error(file_path: &str, file_type: &str, error: &str) {
 /// 例: "営業資料" → "営業 業資 資料"
 fn ngram_tokenize(text: &str) -> String {
     let n = 2;
-    let mut tokens = Vec::new();
+    // 文字数制限（1MB相当）
+    const MAX_CHARS: usize = 1_000_000;
 
     // 改行・余分なスペースを削除
     let cleaned = text.replace("\n", " ").replace("\r", "");
     let cleaned = cleaned.split_whitespace().collect::<Vec<_>>().join(" ");
 
-    // 2-gram生成
-    let chars: Vec<char> = cleaned.chars().collect();
-    for i in 0..chars.len().saturating_sub(n - 1) {
+    // 2-gram生成（文字数制限付き）
+    let chars: Vec<char> = cleaned.chars().take(MAX_CHARS).collect();
+    let char_count = chars.len();
+
+    if char_count < n {
+        return String::new();
+    }
+
+    // 事前容量確保（各gramは2文字+スペース1文字で約3バイト）
+    let estimated_capacity = (char_count.saturating_sub(n - 1)) * 3;
+    let mut tokens = Vec::with_capacity(char_count.saturating_sub(n - 1));
+
+    for i in 0..char_count.saturating_sub(n - 1) {
         let gram: String = chars[i..i + n].iter().collect();
         if !gram.trim().is_empty() {
             tokens.push(gram);
         }
     }
 
-    tokens.join(" ")
+    let mut result = String::with_capacity(estimated_capacity);
+    result.push_str(&tokens.join(" "));
+    result
 }
 
 /// 検索クエリをN-gram化してFTS5で検索

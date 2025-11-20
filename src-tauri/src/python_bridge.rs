@@ -116,6 +116,12 @@ impl PythonBridge {
 
     /// Pythonプロセスにコマンドを送信
     fn send_command(&mut self, command: &Value) -> Result<(), String> {
+        // stdinがNoneの場合、自動再起動
+        if self.stdin.is_none() {
+            debug_log("stdin is None, auto-restarting Python process...");
+            self.start()?;
+        }
+
         if let Some(ref mut stdin) = self.stdin {
             let command_str = serde_json::to_string(command)
                 .map_err(|e| format!("Failed to serialize command: {}", e))?;
@@ -140,6 +146,12 @@ impl PythonBridge {
 
     /// Pythonプロセスからレスポンスを読み取り（30秒タイムアウト）
     fn read_response(&mut self) -> Result<Value, String> {
+        // stdoutがNoneの場合、自動再起動
+        if self.stdout.is_none() {
+            debug_log("stdout is None, auto-restarting Python process...");
+            self.start()?;
+        }
+
         if self.stdout.is_none() {
             return Err("Python process is not running".to_string());
         }
