@@ -521,6 +521,12 @@ fn scan_directory_with_exclusions(
         }
     }
 
+    // デバッグ: スキャン中のディレクトリをログ
+    let total = *total_files.lock().unwrap();
+    if total % 100 == 0 {
+        crate::logger::info("FileScanner", &format!("Scanning: {} (total: {})", path.display(), total));
+    }
+
     // 特殊フォルダを除外
     let folder_name = path.file_name()
         .and_then(|n| n.to_str())
@@ -578,8 +584,19 @@ fn scan_directory_with_exclusions(
 
             // 対応ファイル形式のみ内容分析
             if matches!(ext_str.as_str(), "pdf" | "xlsx" | "xls" | "docx" | "pptx" | "txt" | "md") {
-                if process_file(conn, &entry_path).is_ok() {
-                    *processed_files.lock().unwrap() += 1;
+                // デバッグ: 処理するファイルをログ
+                let total_now = *total_files.lock().unwrap();
+                if total_now <= 10 || total_now % 100 == 0 {
+                    crate::logger::info("FileScanner", &format!("Processing file: {} (type: {})", entry_path.display(), ext_str));
+                }
+
+                match process_file(conn, &entry_path) {
+                    Ok(_) => {
+                        *processed_files.lock().unwrap() += 1;
+                    }
+                    Err(e) => {
+                        crate::logger::error("FileScanner", &format!("Failed to process {}: {}", entry_path.display(), e));
+                    }
                 }
             }
 
