@@ -20,6 +20,7 @@ function isTauriEnvironment(): boolean {
 export interface DatabaseStats {
   total_files: number;
   total_tags: number;
+  total_size: number;
   db_size_bytes: number;
 }
 
@@ -71,18 +72,21 @@ export class TauriService {
    */
   static async getDatabaseStats(): Promise<DatabaseStats> {
     console.log('[TauriService] getDatabaseStats called, isTauriEnv:', isTauriEnvironment());
-    if (!isTauriEnvironment()) {
-      console.warn('[DEV] Using mock database stats (not in Tauri environment)');
+    try {
+      console.log('[TauriService] Attempting to call get_db_stats command...');
+      const result = await invoke<DatabaseStats>('get_db_stats');
+      console.log('[TauriService] ✅ get_db_stats SUCCESS:', result);
+      return result;
+    } catch (error) {
+      console.error('[TauriService] ❌ get_db_stats FAILED:', error);
+      console.warn('[DEV] Falling back to mock database stats');
       return {
         total_files: 1234,
         total_tags: 15,
+        total_size: 104857600, // 100MB
         db_size_bytes: 5242880, // 5MB
       };
     }
-    console.log('[TauriService] Calling get_db_stats command');
-    const result = await invoke<DatabaseStats>('get_db_stats');
-    console.log('[TauriService] get_db_stats result:', result);
-    return result;
   }
 
   /**

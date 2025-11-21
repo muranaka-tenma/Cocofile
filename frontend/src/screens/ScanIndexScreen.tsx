@@ -38,8 +38,19 @@ export const ScanIndexScreen: React.FC = () => {
   const handleFullScan = async () => {
     try {
       setIsFullScanning(true);
-      setOperationMessage('PC全体のスキャンを開始しました。右下に進捗が表示されます。');
-      await invoke('scan_all_drives');
+      setOperationMessage('PC全体のスキャンを開始しました。進捗は画面下部に表示されます。');
+
+      // Start scan in background - it will emit progress events
+      invoke('scan_all_drives').then(() => {
+        setIsFullScanning(false);
+        setOperationMessage('PC全体のスキャンが完了しました！');
+        // Refresh statistics after scan completes
+        window.location.reload();
+      }).catch((err) => {
+        console.error('Full scan error:', err);
+        setIsFullScanning(false);
+        setOperationMessage(`スキャンエラー: ${err}`);
+      });
     } catch (err) {
       setOperationMessage('PC全体スキャンの開始に失敗しました');
       setIsFullScanning(false);
@@ -62,12 +73,24 @@ export const ScanIndexScreen: React.FC = () => {
     return `${minutes}分`;
   };
 
-  // Handle manual scan start
+  // Handle manual scan start with folder picker
   const handleStartScan = async () => {
     try {
       setOperationMessage(null);
-      await startScan();
+      // Open folder picker using Tauri dialog
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selectedPath = await open({
+        directory: true,
+        multiple: false,
+        title: 'スキャンするフォルダを選択',
+      });
+
+      if (selectedPath) {
+        await startScan(selectedPath as string);
+        setOperationMessage(`スキャンを開始しました: ${selectedPath}`);
+      }
     } catch (err) {
+      console.error('Scan start error:', err);
       setOperationMessage('スキャンの開始に失敗しました');
     }
   };

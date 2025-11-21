@@ -204,6 +204,11 @@ pub fn get_database_stats(app: &tauri::AppHandle) -> Result<DatabaseStats, Strin
         .query_row("SELECT COUNT(*) FROM tags", [], |row| row.get(0))
         .unwrap_or(0);
 
+    // Calculate total file size
+    let total_size: i64 = conn
+        .query_row("SELECT COALESCE(SUM(file_size), 0) FROM file_metadata", [], |row| row.get(0))
+        .unwrap_or(0);
+
     let db_path = get_db_path(app)?;
     let db_size = std::fs::metadata(&db_path)
         .map(|m| m.len())
@@ -212,6 +217,7 @@ pub fn get_database_stats(app: &tauri::AppHandle) -> Result<DatabaseStats, Strin
     Ok(DatabaseStats {
         total_files,
         total_tags,
+        total_size,
         db_size_bytes: db_size,
     })
 }
@@ -220,6 +226,7 @@ pub fn get_database_stats(app: &tauri::AppHandle) -> Result<DatabaseStats, Strin
 pub struct DatabaseStats {
     pub total_files: i64,
     pub total_tags: i64,
+    pub total_size: i64,
     pub db_size_bytes: u64,
 }
 

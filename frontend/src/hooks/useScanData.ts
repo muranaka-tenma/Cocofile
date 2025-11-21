@@ -51,11 +51,17 @@ export const useScanData = () => {
           const status = await scanService.getScanStatus();
           setScanSession(status);
 
-          if (status?.status !== 'scanning') {
-            setIsScanning(false);
-            // Refresh statistics after scan completes
+          // Update statistics regardless of scan status
+          // This ensures UI reflects latest data even during scanning
+          try {
             const statsData = await scanService.getStatistics();
             setStatistics(statsData);
+          } catch (statsErr) {
+            console.warn('Failed to update statistics during scan:', statsErr);
+          }
+
+          if (status?.status !== 'scanning' && status?.status != null) {
+            setIsScanning(false);
           }
         } catch (err) {
           console.error('Failed to poll scan status:', err);

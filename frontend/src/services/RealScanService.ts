@@ -44,23 +44,16 @@ export class RealScanService {
         elapsedTime: 0,
       };
 
-      // Tauriバックエンドでスキャン開始（非同期）
-      TauriService.scanDirectory(targetFolder)
-        .then((result) => {
-          console.log('Scan completed:', result);
-          if (this.currentSession) {
-            this.currentSession.status = SCAN_STATUS.COMPLETED;
-            this.currentSession.processedFiles = result.processed_files;
-            this.currentSession.totalFiles = result.total_files;
-            this.currentSession.progressPercent = 100;
-          }
-        })
-        .catch((error) => {
-          console.error('Scan failed:', error);
-          if (this.currentSession) {
-            this.currentSession.status = SCAN_STATUS.ERROR;
-          }
-        });
+      // Tauriバックエンドでスキャン開始（完了を待つ）
+      const result = await TauriService.scanDirectory(targetFolder);
+
+      console.log('Scan completed:', result);
+
+      // 完了時に状態更新
+      this.currentSession.status = SCAN_STATUS.COMPLETED;
+      this.currentSession.processedFiles = result.processed_files;
+      this.currentSession.totalFiles = result.total_files;
+      this.currentSession.progressPercent = 100;
 
       return this.currentSession;
     } catch (error) {
@@ -101,7 +94,7 @@ export class RealScanService {
       // Tauri結果をフロントエンド型に変換
       return {
         totalFiles: stats.total_files,
-        totalSize: 0, // Phase 2で実装
+        totalSize: stats.total_size,
         databaseSize: stats.db_size_bytes,
         fileTypeBreakdown: [], // Phase 2で実装
         lastUpdatedAt: new Date(),

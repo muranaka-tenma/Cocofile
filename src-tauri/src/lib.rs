@@ -1,6 +1,6 @@
 mod database;
 mod python_bridge;
-mod file_scanner;
+pub mod file_scanner;  // Public for testing
 mod logger;
 mod tag_manager;
 mod favorite_manager;

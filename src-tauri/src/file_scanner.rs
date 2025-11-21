@@ -76,16 +76,11 @@ fn scan_directory_recursive(
             } else if path.is_file() {
                 *total_files += 1;
 
-                // 対応ファイル形式のみ処理
-                if let Some(ext) = path.extension() {
-                    let ext_str = ext.to_string_lossy().to_lowercase();
-                    if matches!(ext_str.as_str(), "pdf" | "xlsx" | "xls" | "docx" | "pptx") {
-                        if let Err(e) = process_file(conn, &path) {
-                            errors.push(format!("Failed to process {}: {}", path.display(), e));
-                        } else {
-                            *processed_files += 1;
-                        }
-                    }
+                // 全てのファイルを処理
+                if let Err(e) = process_file(conn, &path) {
+                    errors.push(format!("Failed to process {}: {}", path.display(), e));
+                } else {
+                    *processed_files += 1;
                 }
             }
         }
@@ -415,7 +410,23 @@ pub fn get_all_drives() -> Vec<String> {
 
     #[cfg(not(target_os = "windows"))]
     {
-        // Linux/macOS: ホームディレクトリをスキャン
+        // WSL環境の場合、Windowsドライブもスキャン
+        let mnt_path = Path::new("/mnt");
+        if mnt_path.exists() && mnt_path.is_dir() {
+            // /mnt/c, /mnt/d などをチェック
+            if let Ok(entries) = std::fs::read_dir(mnt_path) {
+                for entry in entries.flatten() {
+                    if let Ok(file_type) = entry.file_type() {
+                        if file_type.is_dir() {
+                            let drive_path = entry.path().to_string_lossy().to_string();
+                            drives.push(drive_path);
+                        }
+                    }
+                }
+            }
+        }
+
+        // ホームディレクトリもスキャン
         if let Some(home) = dirs::home_dir() {
             drives.push(home.to_string_lossy().to_string());
         }
@@ -622,21 +633,19 @@ fn scan_directory_with_exclusions(
             // 全てのファイルをメタデータに登録（ファイル名検索可能）
             let _ = register_file_metadata(conn, &entry_path);
 
-            // 対応ファイル形式のみ内容分析
-            if matches!(ext_str.as_str(), "pdf" | "xlsx" | "xls" | "docx" | "pptx" | "txt" | "md") {
-                // デバッグ: 処理するファイルをログ
-                let total_now = *total_files.lock().unwrap();
-                if total_now <= 10 || total_now % 100 == 0 {
-                    crate::logger::info("FileScanner", &format!("Processing file: {} (type: {})", entry_path.display(), ext_str));
-                }
+            // 全てのファイルを内容分析（拡張子フィルター削除）
+            // デバッグ: 処理するファイルをログ
+            let total_now = *total_files.lock().unwrap();
+            if total_now <= 10 || total_now % 100 == 0 {
+                crate::logger::info("FileScanner", &format!("Processing file: {} (type: {})", entry_path.display(), ext_str));
+            }
 
-                match process_file(conn, &entry_path) {
-                    Ok(_) => {
-                        *processed_files.lock().unwrap() += 1;
-                    }
-                    Err(e) => {
-                        crate::logger::error("FileScanner", &format!("Failed to process {}: {}", entry_path.display(), e));
-                    }
+            match process_file(conn, &entry_path) {
+                Ok(_) => {
+                    *processed_files.lock().unwrap() += 1;
+                }
+                Err(e) => {
+                    crate::logger::error("FileScanner", &format!("Failed to process {}: {}", entry_path.display(), e));
                 }
             }
 
