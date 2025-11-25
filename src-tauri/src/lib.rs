@@ -1,6 +1,7 @@
 mod database;
 mod favorite_manager;
 pub mod file_scanner; // Public for testing
+mod file_watcher;
 mod logger;
 mod organization_manager;
 mod python_bridge;
@@ -325,7 +326,10 @@ pub fn run() {
             organization_manager::save_user_rule,
             organization_manager::delete_user_rule,
             organization_manager::get_move_history,
-            organization_manager::detect_cloud_file_status
+            organization_manager::detect_cloud_file_status,
+            file_watcher::start_file_watcher,
+            file_watcher::stop_file_watcher,
+            file_watcher::get_file_watcher_status
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
