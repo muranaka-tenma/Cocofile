@@ -137,7 +137,7 @@ pub fn get_organization_suggestions(app: AppHandle) -> Result<Vec<OrganizationSu
     Ok(suggestions)
 }
 
-/// 提案先を決定（シンプルなルールベース）
+/// 提案先を決定（強化されたルールベース）
 fn suggest_destination(
     file_name: &str,
     file_type: &str,
@@ -147,7 +147,36 @@ fn suggest_destination(
     let home_dir =
         std::env::var("USERPROFILE").unwrap_or_else(|_| std::env::var("HOME").unwrap_or_default());
 
-    // PDFレポート
+    // ファイル拡張子を取得
+    let extension = file_name.rsplit('.').next().unwrap_or("").to_lowercase();
+
+    // 優先度1: スクリーンショット（最も具体的）
+    if lower_name.contains("screenshot")
+        || lower_name.contains("スクリーンショット")
+        || lower_name.starts_with("screen shot")
+        || lower_name.starts_with("スクリーン ショット")
+    {
+        return (
+            format!("{}/Pictures/Screenshots", home_dir),
+            "スクリーンショット".to_string(),
+            0.95,
+        );
+    }
+
+    // 優先度2: 請求書・領収書（重要な書類）
+    if lower_name.contains("invoice")
+        || lower_name.contains("請求書")
+        || lower_name.contains("領収書")
+        || lower_name.contains("receipt")
+    {
+        return (
+            format!("{}/Documents/Finance", home_dir),
+            "請求書・領収書".to_string(),
+            0.95,
+        );
+    }
+
+    // 優先度3: PDFレポート
     if file_type == "pdf" && (lower_name.contains("report") || lower_name.contains("レポート"))
     {
         return (
@@ -157,20 +186,101 @@ fn suggest_destination(
         );
     }
 
-    // 請求書・領収書
-    if lower_name.contains("invoice")
-        || lower_name.contains("請求書")
-        || lower_name.contains("領収書")
-    {
+    // 優先度4: 画像ファイル
+    if matches!(
+        extension.as_str(),
+        "jpg" | "jpeg" | "png" | "gif" | "bmp" | "svg" | "webp" | "heic" | "raw" | "cr2" | "nef"
+    ) {
+        // RAW画像（一眼レフ）
+        if matches!(extension.as_str(), "raw" | "cr2" | "nef" | "arw" | "dng") {
+            return (
+                format!("{}/Pictures/Camera RAW", home_dir),
+                "カメラRAW画像".to_string(),
+                0.9,
+            );
+        }
         return (
-            format!("{}/Documents/Finance", home_dir),
-            "請求書・領収書".to_string(),
-            0.95,
+            format!("{}/Pictures", home_dir),
+            "画像ファイル".to_string(),
+            0.85,
         );
     }
 
-    // Excel/Word/PowerPointファイル
-    if file_type == "excel" || file_type == "xlsx" || file_type == "xls" {
+    // 優先度5: 動画ファイル
+    if matches!(
+        extension.as_str(),
+        "mp4" | "avi" | "mkv" | "mov" | "wmv" | "flv" | "webm" | "m4v" | "mpeg" | "mpg"
+    ) {
+        return (
+            format!("{}/Videos", home_dir),
+            "動画ファイル".to_string(),
+            0.85,
+        );
+    }
+
+    // 優先度6: 音楽ファイル
+    if matches!(
+        extension.as_str(),
+        "mp3" | "wav" | "flac" | "m4a" | "aac" | "ogg" | "wma" | "opus" | "alac"
+    ) {
+        return (
+            format!("{}/Music", home_dir),
+            "音楽ファイル".to_string(),
+            0.85,
+        );
+    }
+
+    // 優先度7: 圧縮ファイル
+    if matches!(
+        extension.as_str(),
+        "zip" | "rar" | "7z" | "tar" | "gz" | "bz2" | "xz" | "lzh"
+    ) {
+        return (
+            format!("{}/Downloads/Archives", home_dir),
+            "圧縮ファイル".to_string(),
+            0.8,
+        );
+    }
+
+    // 優先度8: コード・開発ファイル
+    if matches!(
+        extension.as_str(),
+        "js" | "ts"
+            | "jsx"
+            | "tsx"
+            | "py"
+            | "java"
+            | "cpp"
+            | "c"
+            | "h"
+            | "rs"
+            | "go"
+            | "php"
+            | "rb"
+            | "swift"
+            | "kt"
+            | "cs"
+            | "html"
+            | "css"
+            | "scss"
+            | "vue"
+            | "json"
+            | "xml"
+            | "yaml"
+            | "yml"
+            | "sh"
+            | "bat"
+            | "sql"
+    ) {
+        return (
+            format!("{}/Documents/Development", home_dir),
+            "開発ファイル".to_string(),
+            0.8,
+        );
+    }
+
+    // 優先度9: Officeファイル
+    if file_type == "excel" || extension == "xlsx" || extension == "xls" {
         return (
             format!("{}/Documents/Spreadsheets", home_dir),
             "Excelファイル".to_string(),
@@ -178,7 +288,7 @@ fn suggest_destination(
         );
     }
 
-    if file_type == "word" || file_type == "docx" {
+    if file_type == "word" || extension == "docx" || extension == "doc" {
         return (
             format!("{}/Documents/TextDocuments", home_dir),
             "Wordファイル".to_string(),
@@ -186,7 +296,7 @@ fn suggest_destination(
         );
     }
 
-    if file_type == "powerpoint" || file_type == "pptx" {
+    if file_type == "powerpoint" || extension == "pptx" || extension == "ppt" {
         return (
             format!("{}/Documents/Presentations", home_dir),
             "PowerPointファイル".to_string(),
@@ -194,8 +304,26 @@ fn suggest_destination(
         );
     }
 
-    // ダウンロードフォルダの古いファイル
-    if current_location.contains("Downloads") {
+    // 優先度10: PDFドキュメント
+    if file_type == "pdf" || extension == "pdf" {
+        return (
+            format!("{}/Documents/PDF", home_dir),
+            "PDFドキュメント".to_string(),
+            0.75,
+        );
+    }
+
+    // 優先度11: テキストファイル
+    if matches!(extension.as_str(), "txt" | "md" | "rtf" | "log") {
+        return (
+            format!("{}/Documents/Text", home_dir),
+            "テキストファイル".to_string(),
+            0.75,
+        );
+    }
+
+    // 優先度12: ダウンロードフォルダの古いファイル
+    if current_location.contains("Downloads") || current_location.contains("downloads") {
         return (
             format!("{}/Documents/Archive", home_dir),
             "ダウンロードフォルダの古いファイル".to_string(),
