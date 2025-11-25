@@ -16,10 +16,7 @@ pub struct ScanResult {
 }
 
 /// ディレクトリをスキャンしてファイルをデータベースに登録
-pub fn scan_directory(
-    app: &tauri::AppHandle,
-    directory: &str,
-) -> Result<ScanResult, String> {
+pub fn scan_directory(app: &tauri::AppHandle, directory: &str) -> Result<ScanResult, String> {
     crate::logger::info("FileScanner", &format!("Starting scan: {}", directory));
 
     let conn = database::get_connection(app)?;
@@ -36,7 +33,13 @@ pub fn scan_directory(
     let mut errors = Vec::new();
 
     // ディレクトリを再帰的に走査
-    if let Err(e) = scan_directory_recursive(&conn, path, &mut total_files, &mut processed_files, &mut errors) {
+    if let Err(e) = scan_directory_recursive(
+        &conn,
+        path,
+        &mut total_files,
+        &mut processed_files,
+        &mut errors,
+    ) {
         errors.push(format!("Scan error: {}", e));
     }
 
@@ -63,25 +66,22 @@ fn scan_directory_recursive(
     processed_files: &mut usize,
     errors: &mut Vec<String>,
 ) -> Result<(), String> {
-    let entries = fs::read_dir(path)
-        .map_err(|e| format!("Failed to read directory: {}", e))?;
+    let entries = fs::read_dir(path).map_err(|e| format!("Failed to read directory: {}", e))?;
 
-    for entry in entries {
-        if let Ok(entry) = entry {
-            let path = entry.path();
+    for entry in entries.flatten() {
+        let path = entry.path();
 
-            if path.is_dir() {
-                // 再帰的にスキャン
-                let _ = scan_directory_recursive(conn, &path, total_files, processed_files, errors);
-            } else if path.is_file() {
-                *total_files += 1;
+        if path.is_dir() {
+            // 再帰的にスキャン
+            let _ = scan_directory_recursive(conn, &path, total_files, processed_files, errors);
+        } else if path.is_file() {
+            *total_files += 1;
 
-                // 全てのファイルを処理
-                if let Err(e) = process_file(conn, &path) {
-                    errors.push(format!("Failed to process {}: {}", path.display(), e));
-                } else {
-                    *processed_files += 1;
-                }
+            // 全てのファイルを処理
+            if let Err(e) = process_file(conn, &path) {
+                errors.push(format!("Failed to process {}: {}", path.display(), e));
+            } else {
+                *processed_files += 1;
             }
         }
     }
@@ -91,10 +91,7 @@ fn scan_directory_recursive(
 
 /// ファイルのメタデータのみを登録（内容分析なし）
 fn register_file_metadata(conn: &Connection, path: &Path) -> Result<(), String> {
-    let file_path = path
-        .to_str()
-        .ok_or("Invalid file path")?
-        .to_string();
+    let file_path = path.to_str().ok_or("Invalid file path")?.to_string();
 
     let file_name = path
         .file_name()
@@ -108,8 +105,7 @@ fn register_file_metadata(conn: &Connection, path: &Path) -> Result<(), String> 
         .unwrap_or("")
         .to_lowercase();
 
-    let metadata = fs::metadata(path)
-        .map_err(|e| format!("Failed to get file metadata: {}", e))?;
+    let metadata = fs::metadata(path).map_err(|e| format!("Failed to get file metadata: {}", e))?;
 
     let file_size = metadata.len() as i64;
     let now = chrono::Utc::now().to_rfc3339();
@@ -118,13 +114,7 @@ fn register_file_metadata(conn: &Connection, path: &Path) -> Result<(), String> 
         "INSERT OR IGNORE INTO file_metadata
          (file_path, file_name, file_type, file_size, indexed_at)
          VALUES (?1, ?2, ?3, ?4, ?5)",
-        (
-            &file_path,
-            &file_name,
-            &file_type,
-            file_size,
-            &now,
-        ),
+        (&file_path, &file_name, &file_type, file_size, &now),
     )
     .map_err(|e| format!("Failed to insert file metadata: {}", e))?;
 
@@ -133,10 +123,7 @@ fn register_file_metadata(conn: &Connection, path: &Path) -> Result<(), String> 
 
 /// ファイルを処理してデータベースに登録
 fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
-    let file_path = path
-        .to_str()
-        .ok_or("Invalid file path")?
-        .to_string();
+    let file_path = path.to_str().ok_or("Invalid file path")?.to_string();
 
     let file_name = path
         .file_name()
@@ -150,8 +137,7 @@ fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
         .ok_or("Invalid file type")?
         .to_lowercase();
 
-    let metadata = fs::metadata(path)
-        .map_err(|e| format!("Failed to get file metadata: {}", e))?;
+    let metadata = fs::metadata(path).map_err(|e| format!("Failed to get file metadata: {}", e))?;
 
     let file_size = metadata.len() as i64;
 
@@ -170,23 +156,23 @@ fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
         "INSERT OR REPLACE INTO file_metadata
          (file_path, file_name, file_type, file_size, indexed_at)
          VALUES (?1, ?2, ?3, ?4, ?5)",
-        (
-            &file_path,
-            &file_name,
-            &file_type,
-            file_size,
-            &now,
-        ),
+        (&file_path, &file_name, &file_type, file_size, &now),
     )
     .map_err(|e| format!("Failed to insert file metadata: {}", e))?;
 
     // Pythonバックエンドでファイル分析
-    crate::logger::info("FileScanner", &format!("Getting Python bridge for: {}", file_name));
+    crate::logger::info(
+        "FileScanner",
+        &format!("Getting Python bridge for: {}", file_name),
+    );
 
     let mut bridge_lock = python_bridge::get_python_bridge()
         .map_err(|e| format!("Failed to get Python bridge: {}", e))?;
 
-    crate::logger::info("FileScanner", &format!("Analyzing file: {} (type: {})", file_name, file_type));
+    crate::logger::info(
+        "FileScanner",
+        &format!("Analyzing file: {} (type: {})", file_name, file_type),
+    );
 
     if let Some(ref mut bridge) = *bridge_lock {
         // ファイルタイプに応じて適切な分析関数を呼び出す
@@ -201,7 +187,14 @@ fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
 
         match analyze_result {
             Ok(result) => {
-                crate::logger::info("FileScanner", &format!("Analysis success: {} ({} chars)", file_name, result.text.len()));
+                crate::logger::info(
+                    "FileScanner",
+                    &format!(
+                        "Analysis success: {} ({} chars)",
+                        file_name,
+                        result.text.len()
+                    ),
+                );
 
                 // N-gram処理してFTS5に登録
                 let ngram_text = ngram_tokenize(&result.text);
@@ -212,11 +205,17 @@ fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
                 )
                 .map_err(|e| format!("Failed to insert into FTS5: {}", e))?;
 
-                crate::logger::info("FileScanner", &format!("Indexed: {} ({} bytes)", file_name, result.text.len()));
+                crate::logger::info(
+                    "FileScanner",
+                    &format!("Indexed: {} ({} bytes)", file_name, result.text.len()),
+                );
             }
             Err(e) => {
                 // 分析失敗時もメタデータは登録済み（ファイル名検索可能）
-                crate::logger::error("FileScanner", &format!("Analysis failed: {} - {}", file_name, e));
+                crate::logger::error(
+                    "FileScanner",
+                    &format!("Analysis failed: {} - {}", file_name, e),
+                );
                 // エラー詳細をログに記録
                 log_analysis_error(&file_path, &file_type, &e);
             }
@@ -273,10 +272,7 @@ fn ngram_tokenize(text: &str) -> String {
 }
 
 /// 検索クエリをN-gram化してFTS5で検索
-pub fn search_files(
-    app: &tauri::AppHandle,
-    keyword: &str,
-) -> Result<Vec<SearchResult>, String> {
+pub fn search_files(app: &tauri::AppHandle, keyword: &str) -> Result<Vec<SearchResult>, String> {
     let conn = database::get_connection(app)?;
 
     if keyword.trim().is_empty() {
@@ -300,7 +296,7 @@ pub fn search_files(
              JOIN file_metadata m ON files_fts.file_path = m.file_path
              WHERE files_fts MATCH ?1
              ORDER BY rank
-             LIMIT 100"
+             LIMIT 100",
         )
         .map_err(|e| format!("Failed to prepare FTS5 query: {}", e))?;
 
@@ -329,7 +325,7 @@ pub fn search_files(
                 "SELECT file_path, file_name, file_type, file_size
                  FROM file_metadata
                  WHERE file_name LIKE ?1
-                 LIMIT 100"
+                 LIMIT 100",
             )
             .map_err(|e| format!("Failed to prepare fallback query: {}", e))?;
 
@@ -453,12 +449,14 @@ pub fn scan_all_drives(app: tauri::AppHandle) -> Result<(), String> {
             }
         };
 
-        let excluded_folders: Vec<String> = settings.excluded_folders
+        let excluded_folders: Vec<String> = settings
+            .excluded_folders
             .iter()
             .map(|f| f.to_lowercase())
             .collect();
 
-        let excluded_extensions: Vec<String> = settings.excluded_extensions
+        let excluded_extensions: Vec<String> = settings
+            .excluded_extensions
             .iter()
             .map(|e| e.to_lowercase())
             .collect();
@@ -559,21 +557,34 @@ fn scan_directory_with_exclusions(
 
     // デバッグ: スキャン中のディレクトリをログ（最初の20回、その後は100ごと）
     let total = *total_files.lock().unwrap();
-    if total <= 20 || total % 100 == 0 {
-        crate::logger::info("FileScanner", &format!("Scanning: {} (total: {})", path.display(), total));
+    if total <= 20 || total.is_multiple_of(100) {
+        crate::logger::info(
+            "FileScanner",
+            &format!("Scanning: {} (total: {})", path.display(), total),
+        );
     }
 
     // 特殊フォルダを除外
-    let folder_name = path.file_name()
+    let folder_name = path
+        .file_name()
         .and_then(|n| n.to_str())
         .unwrap_or("")
         .to_lowercase();
 
     let skip_folders = [
-        "node_modules", ".git", ".svn", "__pycache__",
-        "venv", ".venv", "target", "build", "dist",
-        "$recycle.bin", "system volume information",
-        "appdata", "programdata"
+        "node_modules",
+        ".git",
+        ".svn",
+        "__pycache__",
+        "venv",
+        ".venv",
+        "target",
+        "build",
+        "dist",
+        "$recycle.bin",
+        "system volume information",
+        "appdata",
+        "programdata",
     ];
 
     if skip_folders.contains(&folder_name.as_str()) {
@@ -583,19 +594,22 @@ fn scan_directory_with_exclusions(
     let entries = match fs::read_dir(path) {
         Ok(e) => e,
         Err(e) => {
-            crate::logger::error("FileScanner", &format!("Cannot read directory {}: {}", path.display(), e));
+            crate::logger::error(
+                "FileScanner",
+                &format!("Cannot read directory {}: {}", path.display(), e),
+            );
             return Ok(()); // アクセス拒否等は無視
         }
     };
 
-    let mut file_count_in_dir = 0;
-    let mut dir_count_in_dir = 0;
+    let mut _file_count_in_dir = 0;
+    let mut _dir_count_in_dir = 0;
 
     for entry in entries.flatten() {
         let entry_path = entry.path();
 
         if entry_path.is_dir() {
-            dir_count_in_dir += 1;
+            _dir_count_in_dir += 1;
             // 再帰的にスキャン
             let _ = scan_directory_with_exclusions(
                 app,
@@ -607,10 +621,11 @@ fn scan_directory_with_exclusions(
                 processed_files.clone(),
             );
         } else if entry_path.is_file() {
-            file_count_in_dir += 1;
+            _file_count_in_dir += 1;
 
             // 拡張子チェック
-            let ext_str = entry_path.extension()
+            let ext_str = entry_path
+                .extension()
                 .and_then(|e| e.to_str())
                 .map(|s| s.to_lowercase())
                 .unwrap_or_default();
@@ -627,7 +642,10 @@ fn scan_directory_with_exclusions(
             // デバッグ: 最初の100ファイルをログ
             let current_total = *total_files.lock().unwrap();
             if current_total <= 100 {
-                crate::logger::info("FileScanner", &format!("Found file #{}: {}", current_total, entry_path.display()));
+                crate::logger::info(
+                    "FileScanner",
+                    &format!("Found file #{}: {}", current_total, entry_path.display()),
+                );
             }
 
             // 全てのファイルをメタデータに登録（ファイル名検索可能）
@@ -636,8 +654,15 @@ fn scan_directory_with_exclusions(
             // 全てのファイルを内容分析（拡張子フィルター削除）
             // デバッグ: 処理するファイルをログ
             let total_now = *total_files.lock().unwrap();
-            if total_now <= 10 || total_now % 100 == 0 {
-                crate::logger::info("FileScanner", &format!("Processing file: {} (type: {})", entry_path.display(), ext_str));
+            if total_now <= 10 || total_now.is_multiple_of(100) {
+                crate::logger::info(
+                    "FileScanner",
+                    &format!(
+                        "Processing file: {} (type: {})",
+                        entry_path.display(),
+                        ext_str
+                    ),
+                );
             }
 
             match process_file(conn, &entry_path) {
@@ -645,7 +670,10 @@ fn scan_directory_with_exclusions(
                     *processed_files.lock().unwrap() += 1;
                 }
                 Err(e) => {
-                    crate::logger::error("FileScanner", &format!("Failed to process {}: {}", entry_path.display(), e));
+                    crate::logger::error(
+                        "FileScanner",
+                        &format!("Failed to process {}: {}", entry_path.display(), e),
+                    );
                 }
             }
 
@@ -653,7 +681,7 @@ fn scan_directory_with_exclusions(
             let total = *total_files.lock().unwrap();
             let processed = *processed_files.lock().unwrap();
             // 最初の10ファイルは毎回、その後は50ごと
-            if total <= 10 || total % 50 == 0 {
+            if total <= 10 || total.is_multiple_of(50) {
                 let progress = ScanProgress {
                     current_drive: path.to_string_lossy().chars().take(3).collect(),
                     current_folder: path.to_string_lossy().to_string(),

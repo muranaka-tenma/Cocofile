@@ -9,6 +9,7 @@ static LOG_FILE: Mutex<Option<PathBuf>> = Mutex::new(None);
 
 /// ログレベル
 #[derive(Debug, Clone, Copy)]
+#[allow(dead_code)]
 pub enum LogLevel {
     Info,
     Warn,
@@ -35,8 +36,7 @@ pub fn initialize_logger(app: &tauri::AppHandle) -> Result<(), String> {
         .map_err(|e| format!("Failed to get app data dir: {}", e))?;
 
     let log_dir = app_data_dir.join("logs");
-    fs::create_dir_all(&log_dir)
-        .map_err(|e| format!("Failed to create log directory: {}", e))?;
+    fs::create_dir_all(&log_dir).map_err(|e| format!("Failed to create log directory: {}", e))?;
 
     let log_file_path = log_dir.join("cocofile.log");
 
@@ -80,11 +80,7 @@ pub fn log(level: LogLevel, module: &str, message: &str) {
     // ファイルに書き込み
     if let Ok(log_file) = LOG_FILE.lock() {
         if let Some(ref path) = *log_file {
-            if let Ok(mut file) = OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(path)
-            {
+            if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(path) {
                 let _ = file.write_all(log_line.as_bytes());
             }
         }
@@ -97,6 +93,7 @@ pub fn info(module: &str, message: &str) {
 }
 
 /// Warnレベルのログ
+#[allow(dead_code)]
 pub fn warn(module: &str, message: &str) {
     log(LogLevel::Warn, module, message);
 }
@@ -107,6 +104,7 @@ pub fn error(module: &str, message: &str) {
 }
 
 /// ログファイルのパスを取得
+#[allow(dead_code)]
 pub fn get_log_file_path() -> Option<PathBuf> {
     LOG_FILE.lock().ok().and_then(|f| f.clone())
 }

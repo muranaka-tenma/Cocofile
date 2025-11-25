@@ -15,6 +15,7 @@ pub struct Tag {
 
 /// ファイルのタグ一覧
 #[derive(Debug, serde::Serialize)]
+#[allow(dead_code)]
 pub struct FileTags {
     pub file_path: String,
     pub tags: Vec<String>,

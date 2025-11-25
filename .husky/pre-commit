@@ -1,0 +1,8 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run lint-staged (format and lint changed files)
+cd frontend && npx lint-staged
+
+# Run Rust checks
+cd ../src-tauri && cargo fmt --check && cargo clippy -- -D warnings

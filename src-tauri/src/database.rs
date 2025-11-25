@@ -206,13 +206,15 @@ pub fn get_database_stats(app: &tauri::AppHandle) -> Result<DatabaseStats, Strin
 
     // Calculate total file size
     let total_size: i64 = conn
-        .query_row("SELECT COALESCE(SUM(file_size), 0) FROM file_metadata", [], |row| row.get(0))
+        .query_row(
+            "SELECT COALESCE(SUM(file_size), 0) FROM file_metadata",
+            [],
+            |row| row.get(0),
+        )
         .unwrap_or(0);
 
     let db_path = get_db_path(app)?;
-    let db_size = std::fs::metadata(&db_path)
-        .map(|m| m.len())
-        .unwrap_or(0);
+    let db_size = std::fs::metadata(&db_path).map(|m| m.len()).unwrap_or(0);
 
     Ok(DatabaseStats {
         total_files,

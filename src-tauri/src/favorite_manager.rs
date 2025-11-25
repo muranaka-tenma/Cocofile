@@ -30,9 +30,7 @@ pub fn toggle_favorite(app: &tauri::AppHandle, file_path: String) -> Result<bool
 }
 
 /// お気に入りファイル一覧を取得
-pub fn get_favorites(
-    app: &tauri::AppHandle,
-) -> Result<Vec<file_scanner::SearchResult>, String> {
+pub fn get_favorites(app: &tauri::AppHandle) -> Result<Vec<file_scanner::SearchResult>, String> {
     let conn = database::get_connection(app)?;
 
     let mut stmt = conn
@@ -64,9 +62,7 @@ pub fn get_favorites(
 }
 
 /// 最近使用したファイル一覧を取得
-pub fn get_recent_files(
-    app: &tauri::AppHandle,
-) -> Result<Vec<file_scanner::SearchResult>, String> {
+pub fn get_recent_files(app: &tauri::AppHandle) -> Result<Vec<file_scanner::SearchResult>, String> {
     let conn = database::get_connection(app)?;
 
     let mut stmt = conn

@@ -1,15 +1,15 @@
 // CocoFile - Main Application Entry
-import { useEffect, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { listen } from '@tauri-apps/api/event';
-import { MainSearchScreen } from './screens/MainSearchScreen';
-import { ScanIndexScreen } from './screens/ScanIndexScreen';
-import { SettingsScreen } from './screens/SettingsScreen';
-import { TagManagementScreen } from './screens/TagManagementScreen';
-import FileOrganizationScreen from './screens/FileOrganizationScreen';
-import { DevNavigation } from './components/DevNavigation';
-import { useNavigationStore } from './store/navigationStore';
-import './App.css';
+import { useEffect, useState } from "react";
+// import { invoke } from '@tauri-apps/api/core'; // Temporarily disabled with auto-scan
+import { listen } from "@tauri-apps/api/event";
+import { MainSearchScreen } from "./screens/MainSearchScreen";
+import { ScanIndexScreen } from "./screens/ScanIndexScreen";
+import { SettingsScreen } from "./screens/SettingsScreen";
+import { TagManagementScreen } from "./screens/TagManagementScreen";
+import FileOrganizationScreen from "./screens/FileOrganizationScreen";
+import { DevNavigation } from "./components/DevNavigation";
+import { useNavigationStore } from "./store/navigationStore";
+import "./App.css";
 
 interface ScanProgress {
   current_drive: string;
@@ -24,48 +24,68 @@ function App() {
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
 
-  // アプリ起動時に自動でスキャン開始
+  // 初回起動時のみ自動でPC全体をスキャン
   useEffect(() => {
-    const startAutoScan = async () => {
+    const startAutoScanOnFirstRun = async () => {
       try {
-        // 少し待ってからスキャン開始（UIが安定してから）
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        setIsScanning(true);
-        await invoke('scan_all_drives');
+        // Tauri環境でない場合はスキップ
+        if (typeof window === "undefined" || !("__TAURI__" in window)) {
+          console.log("[App] Not in Tauri environment, skipping auto-scan");
+          return;
+        }
+
+        const { invoke } = await import("@tauri-apps/api/core");
+
+        // 初回起動かチェック
+        const isFirstRun = await invoke<boolean>("is_first_run");
+
+        if (isFirstRun) {
+          console.log("[App] First run detected! Starting full system scan...");
+          // UIが安定してから少し待つ
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          setIsScanning(true);
+          await invoke("scan_all_drives");
+          console.log("[App] Full system scan initiated");
+        } else {
+          console.log("[App] Not first run, skipping auto-scan");
+        }
       } catch (error) {
-        console.error('Failed to start auto scan:', error);
+        console.error(
+          "[App] Failed to check first run or start auto scan:",
+          error,
+        );
         setIsScanning(false);
       }
     };
 
-    startAutoScan();
+    startAutoScanOnFirstRun();
 
     // スキャン進捗イベントをリッスン
-    const unlisten = listen<ScanProgress>('scan-progress', (event) => {
+    const unlisten = listen<ScanProgress>("scan-progress", (event) => {
       setScanProgress(event.payload);
-      if (event.payload.status === 'completed') {
+      if (event.payload.status === "completed") {
         setIsScanning(false);
         setTimeout(() => setScanProgress(null), 3000);
       }
     });
 
     return () => {
-      unlisten.then(fn => fn());
+      unlisten.then((fn) => fn());
     };
   }, []);
 
   // Simple screen router
   const renderScreen = () => {
     switch (currentScreen) {
-      case 'main-search':
+      case "main-search":
         return <MainSearchScreen />;
-      case 'scan-index':
+      case "scan-index":
         return <ScanIndexScreen />;
-      case 'settings':
+      case "settings":
         return <SettingsScreen />;
-      case 'tag-management':
+      case "tag-management":
         return <TagManagementScreen />;
-      case 'file-organization':
+      case "file-organization":
         return <FileOrganizationScreen />;
       default:
         return <MainSearchScreen />;
@@ -82,18 +102,19 @@ function App() {
       {(isScanning || scanProgress) && (
         <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg z-40 w-80 border border-gray-200">
           <div className="flex items-start gap-3">
-            {isScanning && scanProgress?.status !== 'completed' && (
+            {isScanning && scanProgress?.status !== "completed" && (
               <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent flex-shrink-0 mt-0.5"></div>
             )}
-            {scanProgress?.status === 'completed' && (
+            {scanProgress?.status === "completed" && (
               <div className="text-green-500 flex-shrink-0">✓</div>
             )}
             <div className="flex-1 min-w-0">
-              {scanProgress?.status === 'completed' ? (
+              {scanProgress?.status === "completed" ? (
                 <>
                   <p className="text-green-600 font-medium">スキャン完了！</p>
                   <p className="text-sm text-gray-600">
-                    {scanProgress.processed_files.toLocaleString()} ファイルをインデックス化しました
+                    {scanProgress.processed_files.toLocaleString()}{" "}
+                    ファイルをインデックス化しました
                   </p>
                 </>
               ) : (
@@ -102,13 +123,19 @@ function App() {
                     PC全体をスキャン中...
                   </p>
                   <p className="text-xs text-gray-500 mb-1">
-                    ドライブ: {scanProgress?.current_drive || '検出中...'}
+                    ドライブ: {scanProgress?.current_drive || "検出中..."}
                   </p>
-                  <p className="text-xs text-gray-500 truncate" title={scanProgress?.current_folder}>
-                    {scanProgress?.current_folder ? `📁 ${scanProgress.current_folder.split('\\').slice(-2).join('\\')}` : '準備中...'}
+                  <p
+                    className="text-xs text-gray-500 truncate"
+                    title={scanProgress?.current_folder}
+                  >
+                    {scanProgress?.current_folder
+                      ? `📁 ${scanProgress.current_folder.split("\\").slice(-2).join("\\")}`
+                      : "準備中..."}
                   </p>
                   <p className="text-sm font-medium text-blue-600 mt-2">
-                    {scanProgress?.processed_files?.toLocaleString() || 0} ファイル処理済み
+                    {scanProgress?.processed_files?.toLocaleString() || 0}{" "}
+                    ファイル処理済み
                   </p>
                 </>
               )}

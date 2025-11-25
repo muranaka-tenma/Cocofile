@@ -1,15 +1,19 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::fs::{create_dir_all, OpenOptions};
 use std::io::{BufRead, BufReader, Write};
 use std::path::PathBuf;
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{mpsc, Mutex};
-use std::fs::{OpenOptions, create_dir_all};
 use std::time::Duration;
 
 /// デバッグログをファイルに書き込む
 fn debug_log(message: &str) {
-    let log_message = format!("[{}] {}\n", chrono::Local::now().format("%Y-%m-%d %H:%M:%S"), message);
+    let log_message = format!(
+        "[{}] {}\n",
+        chrono::Local::now().format("%Y-%m-%d %H:%M:%S"),
+        message
+    );
 
     // コンソールにも出力
     eprintln!("{}", log_message.trim());
@@ -20,11 +24,7 @@ fn debug_log(message: &str) {
         let _ = create_dir_all(&log_dir);
 
         let log_file = log_dir.join("python-bridge-debug.log");
-        if let Ok(mut file) = OpenOptions::new()
-            .create(true)
-            .append(true)
-            .open(&log_file)
-        {
+        if let Ok(mut file) = OpenOptions::new().create(true).append(true).open(&log_file) {
             let _ = file.write_all(log_message.as_bytes());
         }
     }
@@ -68,7 +68,10 @@ impl PythonBridge {
                 cmd
             }
             Err(e) => {
-                debug_log(&format!("ERROR: Failed to get Python backend command: {}", e));
+                debug_log(&format!(
+                    "ERROR: Failed to get Python backend command: {}",
+                    e
+                ));
                 return Err(e);
             }
         };
@@ -77,7 +80,7 @@ impl PythonBridge {
         debug_log(&format!("Spawning Python process: {}", program));
         let mut child = match Command::new(&program)
             .args(&args)
-            .env("PYTHONUNBUFFERED", "1")  // stdout/stderrアンバッファリング強制
+            .env("PYTHONUNBUFFERED", "1") // stdout/stderrアンバッファリング強制
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -181,13 +184,20 @@ impl PythonBridge {
                     return Err("Empty response from Python".to_string());
                 }
 
-                let response: Value = serde_json::from_str(&line)
-                    .map_err(|e| format!("Failed to parse JSON response: {} (raw: {})", e, line.trim()))?;
+                let response: Value = serde_json::from_str(&line).map_err(|e| {
+                    format!(
+                        "Failed to parse JSON response: {} (raw: {})",
+                        e,
+                        line.trim()
+                    )
+                })?;
 
                 Ok(response)
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {
-                debug_log("ERROR: Python response timeout (30 seconds) - killing process for restart");
+                debug_log(
+                    "ERROR: Python response timeout (30 seconds) - killing process for restart",
+                );
                 // プロセスを強制終了してクリア（次回呼び出し時に自動再起動）
                 if let Some(ref mut process) = self.process {
                     let _ = process.kill();
@@ -313,6 +323,7 @@ pub struct AnalyzeResult {
 pub static PYTHON_BRIDGE: Mutex<Option<PythonBridge>> = Mutex::new(None);
 
 /// Pythonブリッジを初期化
+#[allow(dead_code)]
 pub fn initialize_python_bridge() -> Result<(), String> {
     let mut bridge_lock = PYTHON_BRIDGE
         .lock()
@@ -331,8 +342,7 @@ pub fn initialize_python_bridge() -> Result<(), String> {
 }
 
 /// Pythonブリッジを取得（遅延初期化対応）
-pub fn get_python_bridge() -> Result<std::sync::MutexGuard<'static, Option<PythonBridge>>, String>
-{
+pub fn get_python_bridge() -> Result<std::sync::MutexGuard<'static, Option<PythonBridge>>, String> {
     let mut bridge_lock = PYTHON_BRIDGE
         .lock()
         .map_err(|e| format!("Failed to lock PYTHON_BRIDGE: {}", e))?;
@@ -372,8 +382,6 @@ fn get_python_backend_command() -> Result<(String, Vec<String>), String> {
     // 2. バイナリディレクトリチェック
     let binary_name = if cfg!(target_os = "windows") {
         "python-analyzer.exe"
-    } else if cfg!(target_os = "macos") {
-        "python-analyzer"
     } else {
         "python-analyzer"
     };
@@ -402,10 +410,7 @@ fn get_python_backend_command() -> Result<(String, Vec<String>), String> {
     for binary_path in binary_paths {
         if binary_path.exists() {
             println!("Using Python backend binary: {}", binary_path.display());
-            return Ok((
-                binary_path.to_string_lossy().to_string(),
-                vec![],
-            ));
+            return Ok((binary_path.to_string_lossy().to_string(), vec![]));
         }
     }
 

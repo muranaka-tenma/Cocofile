@@ -1,11 +1,11 @@
 mod database;
-mod python_bridge;
-pub mod file_scanner;  // Public for testing
-mod logger;
-mod tag_manager;
 mod favorite_manager;
-mod settings_manager;
+pub mod file_scanner; // Public for testing
+mod logger;
 mod organization_manager;
+mod python_bridge;
+mod settings_manager;
+mod tag_manager;
 
 // Tauri Commands
 
@@ -24,9 +24,14 @@ fn get_db_stats(app: tauri::AppHandle) -> Result<database::DatabaseStats, String
     let result = database::get_database_stats(&app);
     match &result {
         Ok(stats) => {
-            logger::info("Command", &format!("get_db_stats returned: {} files, {} tags, {} bytes",
-                stats.total_files, stats.total_tags, stats.db_size_bytes));
-        },
+            logger::info(
+                "Command",
+                &format!(
+                    "get_db_stats returned: {} files, {} tags, {} bytes",
+                    stats.total_files, stats.total_tags, stats.db_size_bytes
+                ),
+            );
+        }
         Err(e) => {
             logger::error("Command", &format!("get_db_stats error: {}", e));
         }
@@ -91,13 +96,19 @@ fn analyze_ppt_file(file_path: String) -> Result<python_bridge::AnalyzeResult, S
 
 /// ディレクトリをスキャンしてファイルをインデックス化
 #[tauri::command]
-fn scan_directory(app: tauri::AppHandle, directory: String) -> Result<file_scanner::ScanResult, String> {
+fn scan_directory(
+    app: tauri::AppHandle,
+    directory: String,
+) -> Result<file_scanner::ScanResult, String> {
     file_scanner::scan_directory(&app, &directory)
 }
 
 /// ファイルを検索
 #[tauri::command]
-fn search_files(app: tauri::AppHandle, keyword: String) -> Result<Vec<file_scanner::SearchResult>, String> {
+fn search_files(
+    app: tauri::AppHandle,
+    keyword: String,
+) -> Result<Vec<file_scanner::SearchResult>, String> {
     file_scanner::search_files(&app, &keyword)
 }
 
@@ -129,13 +140,21 @@ fn get_tags(app: tauri::AppHandle) -> Result<Vec<tag_manager::Tag>, String> {
 
 /// タグを作成
 #[tauri::command]
-fn create_tag(app: tauri::AppHandle, tag_name: String, color: Option<String>) -> Result<(), String> {
+fn create_tag(
+    app: tauri::AppHandle,
+    tag_name: String,
+    color: Option<String>,
+) -> Result<(), String> {
     tag_manager::create_tag(&app, tag_name, color)
 }
 
 /// タグを更新
 #[tauri::command]
-fn update_tag(app: tauri::AppHandle, tag_name: String, color: Option<String>) -> Result<(), String> {
+fn update_tag(
+    app: tauri::AppHandle,
+    tag_name: String,
+    color: Option<String>,
+) -> Result<(), String> {
     tag_manager::update_tag(&app, tag_name, color)
 }
 
@@ -147,13 +166,21 @@ fn delete_tag(app: tauri::AppHandle, tag_name: String) -> Result<(), String> {
 
 /// ファイルにタグを追加
 #[tauri::command]
-fn add_tag_to_file(app: tauri::AppHandle, file_path: String, tag_name: String) -> Result<(), String> {
+fn add_tag_to_file(
+    app: tauri::AppHandle,
+    file_path: String,
+    tag_name: String,
+) -> Result<(), String> {
     tag_manager::add_tag_to_file(&app, file_path, tag_name)
 }
 
 /// ファイルからタグを削除
 #[tauri::command]
-fn remove_tag_from_file(app: tauri::AppHandle, file_path: String, tag_name: String) -> Result<(), String> {
+fn remove_tag_from_file(
+    app: tauri::AppHandle,
+    file_path: String,
+    tag_name: String,
+) -> Result<(), String> {
     tag_manager::remove_tag_from_file(&app, file_path, tag_name)
 }
 
@@ -165,7 +192,11 @@ fn get_file_tags(app: tauri::AppHandle, file_path: String) -> Result<Vec<String>
 
 /// ファイルのタグを一括更新
 #[tauri::command]
-fn update_file_tags(app: tauri::AppHandle, file_path: String, tags: Vec<String>) -> Result<(), String> {
+fn update_file_tags(
+    app: tauri::AppHandle,
+    file_path: String,
+    tags: Vec<String>,
+) -> Result<(), String> {
     tag_manager::update_file_tags(&app, file_path, tags)
 }
 
@@ -205,7 +236,10 @@ fn get_settings(app: tauri::AppHandle) -> Result<settings_manager::AppSettings, 
 
 /// 設定を保存
 #[tauri::command]
-fn save_settings(app: tauri::AppHandle, settings: settings_manager::AppSettings) -> Result<(), String> {
+fn save_settings(
+    app: tauri::AppHandle,
+    settings: settings_manager::AppSettings,
+) -> Result<(), String> {
     settings_manager::save_settings(&app, settings)
 }
 

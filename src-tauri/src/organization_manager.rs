@@ -114,7 +114,8 @@ pub fn get_organization_suggestions(app: AppHandle) -> Result<Vec<OrganizationSu
                 .to_string();
 
             // 簡単なルールベースで提案先を決定
-            let (suggested_destination, reason, confidence) = suggest_destination(&file_name, &file_type, &current_location);
+            let (suggested_destination, reason, confidence) =
+                suggest_destination(&file_name, &file_type, &current_location);
 
             Ok(OrganizationSuggestion {
                 file_path: file_path.clone(),
@@ -129,22 +130,26 @@ pub fn get_organization_suggestions(app: AppHandle) -> Result<Vec<OrganizationSu
         .map_err(|e| format!("Failed to query suggestions: {}", e))?;
 
     let mut suggestions = Vec::new();
-    for suggestion in suggestions_iter {
-        if let Ok(s) = suggestion {
-            suggestions.push(s);
-        }
+    for s in suggestions_iter.flatten() {
+        suggestions.push(s);
     }
 
     Ok(suggestions)
 }
 
 /// 提案先を決定（シンプルなルールベース）
-fn suggest_destination(file_name: &str, file_type: &str, current_location: &str) -> (String, String, f32) {
+fn suggest_destination(
+    file_name: &str,
+    file_type: &str,
+    current_location: &str,
+) -> (String, String, f32) {
     let lower_name = file_name.to_lowercase();
-    let home_dir = std::env::var("USERPROFILE").unwrap_or_else(|_| std::env::var("HOME").unwrap_or_default());
+    let home_dir =
+        std::env::var("USERPROFILE").unwrap_or_else(|_| std::env::var("HOME").unwrap_or_default());
 
     // PDFレポート
-    if file_type == "pdf" && (lower_name.contains("report") || lower_name.contains("レポート")) {
+    if file_type == "pdf" && (lower_name.contains("report") || lower_name.contains("レポート"))
+    {
         return (
             format!("{}/Documents/Reports", home_dir),
             "PDFレポートファイル".to_string(),
@@ -153,7 +158,10 @@ fn suggest_destination(file_name: &str, file_type: &str, current_location: &str)
     }
 
     // 請求書・領収書
-    if lower_name.contains("invoice") || lower_name.contains("請求書") || lower_name.contains("領収書") {
+    if lower_name.contains("invoice")
+        || lower_name.contains("請求書")
+        || lower_name.contains("領収書")
+    {
         return (
             format!("{}/Documents/Finance", home_dir),
             "請求書・領収書".to_string(),
@@ -218,7 +226,8 @@ pub fn apply_organization_suggestion(
     // 移動先ディレクトリを作成
     let dest_path = Path::new(&destination);
     if let Some(parent) = dest_path.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("Failed to create destination directory: {}", e))?;
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create destination directory: {}", e))?;
     }
 
     // ファイル移動
@@ -252,7 +261,11 @@ pub fn move_files_batch(app: AppHandle, moves: Vec<FileMove>) -> Result<BatchMov
     let mut errors = Vec::new();
 
     for file_move in moves {
-        match apply_organization_suggestion(app.clone(), file_move.source.clone(), file_move.destination) {
+        match apply_organization_suggestion(
+            app.clone(),
+            file_move.source.clone(),
+            file_move.destination,
+        ) {
             Ok(_) => success_count += 1,
             Err(e) => {
                 failed_count += 1;
@@ -297,10 +310,8 @@ pub fn get_user_rules(app: AppHandle) -> Result<Vec<OrganizationRule>, String> {
         .map_err(|e| format!("Failed to query rules: {}", e))?;
 
     let mut rules = Vec::new();
-    for rule in rules_iter {
-        if let Ok(r) = rule {
-            rules.push(r);
-        }
+    for r in rules_iter.flatten() {
+        rules.push(r);
     }
 
     Ok(rules)
@@ -338,15 +349,21 @@ pub fn save_user_rule(app: AppHandle, rule: OrganizationRule) -> Result<(), Stri
 pub fn delete_user_rule(app: AppHandle, rule_id: String) -> Result<(), String> {
     let conn = database::get_connection(&app)?;
 
-    conn.execute("DELETE FROM organization_rules WHERE id = ?1", params![rule_id])
-        .map_err(|e| format!("Failed to delete rule: {}", e))?;
+    conn.execute(
+        "DELETE FROM organization_rules WHERE id = ?1",
+        params![rule_id],
+    )
+    .map_err(|e| format!("Failed to delete rule: {}", e))?;
 
     Ok(())
 }
 
 /// 移動履歴を取得
 #[tauri::command]
-pub fn get_move_history(app: AppHandle, limit: Option<usize>) -> Result<Vec<MoveHistoryEntry>, String> {
+pub fn get_move_history(
+    app: AppHandle,
+    limit: Option<usize>,
+) -> Result<Vec<MoveHistoryEntry>, String> {
     let conn = database::get_connection(&app)?;
     let limit_value = limit.unwrap_or(100);
 
@@ -373,10 +390,8 @@ pub fn get_move_history(app: AppHandle, limit: Option<usize>) -> Result<Vec<Move
         .map_err(|e| format!("Failed to query history: {}", e))?;
 
     let mut history = Vec::new();
-    for entry in history_iter {
-        if let Ok(h) = entry {
-            history.push(h);
-        }
+    for h in history_iter.flatten() {
+        history.push(h);
     }
 
     Ok(history)
