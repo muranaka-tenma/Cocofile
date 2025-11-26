@@ -9,6 +9,7 @@ import { TagManagementScreen } from "./screens/TagManagementScreen";
 import FileOrganizationScreen from "./screens/FileOrganizationScreen";
 import { DevNavigation } from "./components/DevNavigation";
 import { useNavigationStore } from "./store/navigationStore";
+import { useSettingsStore } from "./store/settingsStore";
 import "./App.css";
 
 interface ScanProgress {
@@ -21,8 +22,28 @@ interface ScanProgress {
 
 function App() {
   const { currentScreen } = useNavigationStore();
+  const { loadSettings, startFileWatcher, settings } = useSettingsStore();
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
+
+  // 設定を読み込んでファイル監視を自動開始
+  useEffect(() => {
+    const initializeFileWatcher = async () => {
+      await loadSettings();
+    };
+
+    initializeFileWatcher();
+  }, [loadSettings]);
+
+  // 設定が読み込まれたらファイル監視を開始
+  useEffect(() => {
+    if (settings && settings.watchedFolders.length > 0) {
+      console.log("[App] Auto-starting file watcher...");
+      startFileWatcher().catch((error) => {
+        console.error("[App] Failed to start file watcher:", error);
+      });
+    }
+  }, [settings, startFileWatcher]);
 
   // 初回起動時のみ自動でPC全体をスキャン
   useEffect(() => {

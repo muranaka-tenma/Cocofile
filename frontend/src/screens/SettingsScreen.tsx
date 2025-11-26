@@ -1,24 +1,25 @@
 // CocoFile - Settings Screen (S-002)
 // Based on mockups/SettingsScreen.html
 
-import React, { useEffect, useState } from 'react';
-import { Trash2, Plus, X } from 'lucide-react';
-import { useSettingsStore } from '@/store/settingsStore';
-import { SCAN_TIMING_TYPES } from '@/types';
-import type { ScanTimingType } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import React, { useEffect, useState } from "react";
+import { Trash2, Plus, X } from "lucide-react";
+import { useSettingsStore } from "@/store/settingsStore";
+import { SCAN_TIMING_TYPES } from "@/types";
+import type { ScanTimingType } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 
 export const SettingsScreen: React.FC = () => {
   const {
     settings,
     loading,
     error,
+    fileWatcherActive,
     loadSettings,
     updateScanTiming,
     updateAutoHide,
@@ -30,19 +31,23 @@ export const SettingsScreen: React.FC = () => {
     removeExcludedExtension,
     addDefaultTag,
     removeDefaultTag,
+    startFileWatcher,
+    stopFileWatcher,
+    checkFileWatcherStatus,
   } = useSettingsStore();
 
-  const [newExtensionInput, setNewExtensionInput] = useState('');
-  const [newTagInput, setNewTagInput] = useState('');
+  const [newExtensionInput, setNewExtensionInput] = useState("");
+  const [newTagInput, setNewTagInput] = useState("");
 
   useEffect(() => {
     loadSettings();
-  }, [loadSettings]);
+    checkFileWatcherStatus();
+  }, [loadSettings, checkFileWatcherStatus]);
 
   const handleSelectFolder = async () => {
     // @MOCK_TO_API: This will use Tauri's dialog API in production
     // For now, using a simple prompt for demonstration
-    const folderPath = prompt('フォルダパスを入力してください:');
+    const folderPath = prompt("フォルダパスを入力してください:");
     if (folderPath) {
       await addWatchedFolder(folderPath);
     }
@@ -50,7 +55,7 @@ export const SettingsScreen: React.FC = () => {
 
   const handleSelectExcludedFolder = async () => {
     // @MOCK_TO_API: This will use Tauri's dialog API in production
-    const folderPath = prompt('除外フォルダパスを入力してください:');
+    const folderPath = prompt("除外フォルダパスを入力してください:");
     if (folderPath) {
       await addExcludedFolder(folderPath);
     }
@@ -59,18 +64,18 @@ export const SettingsScreen: React.FC = () => {
   const handleAddExtension = async () => {
     if (newExtensionInput.trim()) {
       let extension = newExtensionInput.trim();
-      if (!extension.startsWith('.')) {
-        extension = '.' + extension;
+      if (!extension.startsWith(".")) {
+        extension = "." + extension;
       }
       await addExcludedExtension(extension);
-      setNewExtensionInput('');
+      setNewExtensionInput("");
     }
   };
 
   const handleAddTag = async () => {
     if (newTagInput.trim()) {
       await addDefaultTag(newTagInput.trim());
-      setNewTagInput('');
+      setNewTagInput("");
     }
   };
 
@@ -135,6 +140,51 @@ export const SettingsScreen: React.FC = () => {
         </CardContent>
       </Card>
 
+      {/* ファイル監視制御 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>ファイル監視</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="space-y-1">
+              <p className="text-sm font-medium">自動インデックス更新</p>
+              <p className="text-sm text-muted-foreground">
+                監視フォルダ内のファイル変更を検知し、自動的にインデックスを更新します
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant={fileWatcherActive ? "default" : "secondary"}>
+                {fileWatcherActive ? "監視中" : "停止中"}
+              </Badge>
+              {fileWatcherActive ? (
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={stopFileWatcher}
+                >
+                  停止
+                </Button>
+              ) : (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={startFileWatcher}
+                  disabled={settings.watchedFolders.length === 0}
+                >
+                  開始
+                </Button>
+              )}
+            </div>
+          </div>
+          {settings.watchedFolders.length === 0 && (
+            <p className="text-sm text-muted-foreground bg-muted rounded p-3">
+              ⚠️ ファイル監視を開始するには、監視フォルダを追加してください
+            </p>
+          )}
+        </CardContent>
+      </Card>
+
       {/* ファイル分析タイミング */}
       <Card>
         <CardHeader>
@@ -146,7 +196,10 @@ export const SettingsScreen: React.FC = () => {
             onValueChange={(value) => updateScanTiming(value as ScanTimingType)}
           >
             <div className="flex items-center space-x-2">
-              <RadioGroupItem value={SCAN_TIMING_TYPES.REALTIME} id="realtime" />
+              <RadioGroupItem
+                value={SCAN_TIMING_TYPES.REALTIME}
+                id="realtime"
+              />
               <Label htmlFor="realtime" className="cursor-pointer">
                 リアルタイム (ファイル保存時に即座に分析)
               </Label>
@@ -174,8 +227,15 @@ export const SettingsScreen: React.FC = () => {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="hotkey">ホットキー (ウィンドウを呼び出すショートカット)</Label>
-            <Input id="hotkey" value={settings.hotkey} readOnly className="bg-muted" />
+            <Label htmlFor="hotkey">
+              ホットキー (ウィンドウを呼び出すショートカット)
+            </Label>
+            <Input
+              id="hotkey"
+              value={settings.hotkey}
+              readOnly
+              className="bg-muted"
+            />
           </div>
           <div className="flex items-center space-x-2">
             <Checkbox
@@ -198,7 +258,9 @@ export const SettingsScreen: React.FC = () => {
         <CardContent className="space-y-4">
           <div className="flex flex-wrap gap-2 min-h-[60px]">
             {settings.defaultTags.length === 0 ? (
-              <p className="text-sm text-muted-foreground">デフォルトタグが設定されていません</p>
+              <p className="text-sm text-muted-foreground">
+                デフォルトタグが設定されていません
+              </p>
             ) : (
               settings.defaultTags.map((tag, index) => (
                 <Badge key={index} variant="secondary" className="px-3 py-1">
@@ -219,7 +281,7 @@ export const SettingsScreen: React.FC = () => {
               value={newTagInput}
               onChange={(e) => setNewTagInput(e.target.value)}
               onKeyPress={(e) => {
-                if (e.key === 'Enter') {
+                if (e.key === "Enter") {
                   handleAddTag();
                 }
               }}
@@ -244,10 +306,16 @@ export const SettingsScreen: React.FC = () => {
             <div className="bg-muted rounded-md p-3 min-h-[80px]">
               <div className="flex flex-wrap gap-2">
                 {settings.excludedFolders.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">除外フォルダが設定されていません</p>
+                  <p className="text-sm text-muted-foreground">
+                    除外フォルダが設定されていません
+                  </p>
                 ) : (
                   settings.excludedFolders.map((folder, index) => (
-                    <Badge key={index} variant="destructive" className="px-3 py-1">
+                    <Badge
+                      key={index}
+                      variant="destructive"
+                      className="px-3 py-1"
+                    >
                       {folder}
                       <button
                         onClick={() => removeExcludedFolder(folder)}
@@ -272,10 +340,16 @@ export const SettingsScreen: React.FC = () => {
             <div className="bg-muted rounded-md p-3 min-h-[80px]">
               <div className="flex flex-wrap gap-2">
                 {settings.excludedExtensions.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">除外拡張子が設定されていません</p>
+                  <p className="text-sm text-muted-foreground">
+                    除外拡張子が設定されていません
+                  </p>
                 ) : (
                   settings.excludedExtensions.map((ext, index) => (
-                    <Badge key={index} variant="destructive" className="px-3 py-1">
+                    <Badge
+                      key={index}
+                      variant="destructive"
+                      className="px-3 py-1"
+                    >
                       {ext}
                       <button
                         onClick={() => removeExcludedExtension(ext)}
@@ -294,7 +368,7 @@ export const SettingsScreen: React.FC = () => {
                 value={newExtensionInput}
                 onChange={(e) => setNewExtensionInput(e.target.value)}
                 onKeyPress={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     handleAddExtension();
                   }
                 }}
