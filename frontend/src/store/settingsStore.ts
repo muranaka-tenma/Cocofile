@@ -2,9 +2,9 @@
 // State management for Settings Screen
 // Phase 4: Real API integrated
 
-import { create } from 'zustand';
-import type { AppSettings, ScanTimingType } from '@/types';
-import { TauriService, type TauriAppSettings } from '@/services/TauriService';
+import { create } from "zustand";
+import type { AppSettings, ScanTimingType } from "@/types";
+import { TauriService, type TauriAppSettings } from "@/services/TauriService";
 
 /**
  * Tauri型（snake_case）からフロントエンド型（camelCase）に変換
@@ -18,7 +18,7 @@ function convertFromTauri(tauri: TauriAppSettings): AppSettings {
     hotkey: tauri.hotkey,
     windowPosition: tauri.window_position,
     autoHide: tauri.auto_hide,
-    theme: (tauri.theme as 'light' | 'dark') || 'light',
+    theme: (tauri.theme as "light" | "dark") || "light",
     defaultTags: tauri.default_tags,
     tagColors: {},
     lastUpdatedAt: new Date(),
@@ -46,6 +46,7 @@ interface SettingsState {
   settings: AppSettings | null;
   loading: boolean;
   error: string | null;
+  fileWatcherActive: boolean;
 
   // Actions
   loadSettings: () => Promise<void>;
@@ -59,12 +60,18 @@ interface SettingsState {
   removeExcludedExtension: (extension: string) => Promise<void>;
   addDefaultTag: (tagName: string) => Promise<void>;
   removeDefaultTag: (tagName: string) => Promise<void>;
+
+  // ファイル監視機能
+  startFileWatcher: () => Promise<void>;
+  stopFileWatcher: () => Promise<void>;
+  checkFileWatcherStatus: () => Promise<void>;
 }
 
 export const useSettingsStore = create<SettingsState>((set, get) => ({
   settings: null,
   loading: false,
   error: null,
+  fileWatcherActive: false,
 
   loadSettings: async () => {
     set({ loading: true, error: null });
@@ -129,7 +136,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           settings: {
             ...currentSettings,
             watchedFolders: currentSettings.watchedFolders.filter(
-              (f) => f !== folderPath
+              (f) => f !== folderPath,
             ),
           },
         });
@@ -165,7 +172,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
           settings: {
             ...currentSettings,
             excludedFolders: currentSettings.excludedFolders.filter(
-              (f) => f !== folderPath
+              (f) => f !== folderPath,
             ),
           },
         });
@@ -201,7 +208,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         const updatedSettings = {
           ...currentSettings,
           excludedExtensions: currentSettings.excludedExtensions.filter(
-            (e) => e !== extension
+            (e) => e !== extension,
           ),
         };
         await TauriService.saveSettings(convertToTauri(updatedSettings));
@@ -239,6 +246,34 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
         await TauriService.saveSettings(convertToTauri(updatedSettings));
         set({ settings: updatedSettings });
       }
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+
+  // ファイル監視機能
+  startFileWatcher: async () => {
+    try {
+      await TauriService.startFileWatcher();
+      set({ fileWatcherActive: true, error: null });
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+
+  stopFileWatcher: async () => {
+    try {
+      await TauriService.stopFileWatcher();
+      set({ fileWatcherActive: false, error: null });
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+
+  checkFileWatcherStatus: async () => {
+    try {
+      const isActive = await TauriService.getFileWatcherStatus();
+      set({ fileWatcherActive: isActive });
     } catch (error) {
       set({ error: (error as Error).message });
     }
