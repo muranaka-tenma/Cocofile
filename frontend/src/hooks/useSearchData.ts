@@ -6,6 +6,7 @@ import { useEffect, useCallback } from "react";
 import { useSearchStore } from "@/store/searchStore";
 import { RealFileService } from "@/services/RealFileService";
 import { TAB_TYPES, type SearchResult } from "@/types";
+import { useSearchCache } from "@/hooks/useSearchCache";
 
 const fileService = new RealFileService();
 
@@ -22,6 +23,12 @@ export const useSearchData = () => {
     setError,
   } = useSearchStore();
 
+  // Initialize search cache
+  const { getCached, setCached } = useSearchCache({
+    maxSize: 50, // Cache up to 50 search queries
+    ttl: 5 * 60 * 1000, // 5 minutes cache lifetime
+  });
+
   // Perform search based on current keyword and filters
   const performSearch = useCallback(async () => {
     try {
@@ -31,9 +38,20 @@ export const useSearchData = () => {
       let results: SearchResult[] = [];
 
       switch (activeTab) {
-        case TAB_TYPES.SEARCH_RESULTS:
-          results = await fileService.searchFiles(keyword, filters);
+        case TAB_TYPES.SEARCH_RESULTS: {
+          // Check cache first
+          const cachedResults = getCached(keyword, filters);
+          if (cachedResults) {
+            results = cachedResults;
+            console.log("✓ Cache hit for search:", keyword);
+          } else {
+            results = await fileService.searchFiles(keyword, filters);
+            // Cache the results
+            setCached(keyword, filters, results);
+            console.log("→ Cached search:", keyword);
+          }
           break;
+        }
 
         case TAB_TYPES.FAVORITES:
           results = await fileService.getFavorites();
@@ -54,7 +72,16 @@ export const useSearchData = () => {
     } finally {
       setIsSearching(false);
     }
-  }, [keyword, filters, activeTab, setSearchResults, setIsSearching, setError]);
+  }, [
+    keyword,
+    filters,
+    activeTab,
+    setSearchResults,
+    setIsSearching,
+    setError,
+    getCached,
+    setCached,
+  ]);
 
   // Auto-search when keyword, filters, or tab changes
   useEffect(() => {
