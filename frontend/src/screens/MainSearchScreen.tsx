@@ -36,6 +36,7 @@ import { TagBadge } from "@/components/TagBadge";
 import { TagFilterDialog } from "@/components/TagFilterDialog";
 import { DateRangeFilterDialog } from "@/components/DateRangeFilterDialog";
 import { AdvancedSearchDialog } from "@/components/AdvancedSearchDialog";
+import { VirtualizedResultList } from "@/components/VirtualizedResultList";
 
 export const MainSearchScreen: React.FC = () => {
   const [tagFilterOpen, setTagFilterOpen] = React.useState(false);
@@ -395,7 +396,22 @@ const ResultList: React.FC<ResultListProps> = ({
     );
   }
 
-  // Results list
+  // Use virtualized list for large result sets (50+ items)
+  if (results.length > 50) {
+    return (
+      <VirtualizedResultList
+        results={results}
+        onToggleFavorite={onToggleFavorite}
+        onOpenFileLocation={onOpenFileLocation}
+        onShowDetail={onShowDetail}
+        formatFileSize={formatFileSize}
+        formatRelativeTime={formatRelativeTime}
+        getFileIcon={getFileIcon}
+      />
+    );
+  }
+
+  // Normal list for smaller result sets
   return (
     <div className="flex flex-col gap-3">
       {results.map((result) => (
