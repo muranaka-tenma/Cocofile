@@ -158,6 +158,7 @@ export const useTagManagement = () => {
    * タグをマージ（Phase 2で実装予定）
    */
   const mergeTags = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     async (_sourceTagNames: string[], _targetTagName: string) => {
       console.warn("Tag merge not yet implemented (Phase 2)");
       setError("タグマージ機能は未実装です");
