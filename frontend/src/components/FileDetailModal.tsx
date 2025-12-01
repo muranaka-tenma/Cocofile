@@ -16,6 +16,8 @@ import { useFileDetailStore } from "@/store/fileDetailStore";
 import { RealFileService } from "@/services/RealFileService";
 import { TagBadge } from "@/components/TagBadge";
 import { useTagSuggestions } from "@/hooks/useTagSuggestions";
+import { PDFPreview } from "@/components/PDFPreview";
+import { ImagePreview } from "@/components/ImagePreview";
 import {
   FileText,
   Star,
@@ -196,11 +198,29 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
         <div className="flex-1 overflow-y-auto space-y-6">
           {/* Preview section */}
           <div className="bg-muted rounded-lg p-6">
-            <div className="bg-background border rounded-md min-h-[300px] flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <FileText className="h-16 w-16 mx-auto mb-3 opacity-20" />
-                <p>ファイルプレビュー</p>
-              </div>
+            <div className="bg-background border rounded-md min-h-[400px] h-[500px] overflow-hidden">
+              {fileMetadata.fileType === "pdf" ? (
+                <PDFPreview filePath={fileMetadata.filePath} />
+              ) : fileMetadata.fileType === "image" ? (
+                <ImagePreview filePath={fileMetadata.filePath} />
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <div className="text-center text-muted-foreground">
+                    <FileText className="h-16 w-16 mx-auto mb-3 opacity-20" />
+                    <p>プレビュー未対応</p>
+                    <p className="text-xs mt-1">
+                      {fileMetadata.fileType === "excel"
+                        ? "Excelファイル"
+                        : fileMetadata.fileType === "word"
+                          ? "Wordファイル"
+                          : fileMetadata.fileType === "powerpoint"
+                            ? "PowerPointファイル"
+                            : "このファイル形式"}
+                      のプレビューは準備中です
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 

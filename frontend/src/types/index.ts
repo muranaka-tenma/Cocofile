@@ -10,6 +10,7 @@ export const FILE_TYPES = {
   EXCEL: "excel",
   WORD: "word",
   POWERPOINT: "powerpoint",
+  IMAGE: "image",
 } as const;
 
 export type FileType = (typeof FILE_TYPES)[keyof typeof FILE_TYPES];
