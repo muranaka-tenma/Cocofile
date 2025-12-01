@@ -11,11 +11,25 @@ import type {
 } from "@/types";
 import { TAB_TYPES } from "@/types";
 
+export const SORT_OPTIONS = {
+  RELEVANCE: "relevance",
+  NAME_ASC: "name_asc",
+  NAME_DESC: "name_desc",
+  DATE_DESC: "date_desc",
+  DATE_ASC: "date_asc",
+  SIZE_DESC: "size_desc",
+  SIZE_ASC: "size_asc",
+  FREQUENT: "frequent",
+} as const;
+
+export type SortOption = (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS];
+
 interface SearchState {
   // Search state
   keyword: string;
   filters: SearchFilters;
   activeTab: TabType;
+  sortBy: SortOption;
   searchResults: SearchResult[];
   isSearching: boolean;
   error: string | null;
@@ -24,6 +38,7 @@ interface SearchState {
   setKeyword: (keyword: string) => void;
   setFilters: (filters: Partial<SearchFilters>) => void;
   setActiveTab: (tab: TabType) => void;
+  setSortBy: (sortBy: SortOption) => void;
   setSearchResults: (results: SearchResult[]) => void;
   setIsSearching: (isSearching: boolean) => void;
   setError: (error: string | null) => void;
@@ -49,6 +64,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   keyword: "",
   filters: initialFilters,
   activeTab: TAB_TYPES.SEARCH_RESULTS,
+  sortBy: SORT_OPTIONS.RELEVANCE,
   searchResults: [],
   isSearching: false,
   error: null,
@@ -62,6 +78,8 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     })),
 
   setActiveTab: (tab) => set({ activeTab: tab }),
+
+  setSortBy: (sortBy) => set({ sortBy }),
 
   setSearchResults: (results) => set({ searchResults: results }),
 

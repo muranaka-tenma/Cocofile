@@ -14,13 +14,22 @@ import {
   Folder,
   Loader2,
   SearchX,
+  ArrowUpDown,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { useSearchStore } from "@/store/searchStore";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useSearchStore, SORT_OPTIONS } from "@/store/searchStore";
 import { useSearchData } from "@/hooks/useSearchData";
 import { useFileDetailStore } from "@/store/fileDetailStore";
+import { useSortedResults } from "@/hooks/useSortedResults";
 import { TAB_TYPES, FILE_TYPES } from "@/types";
 import { FileDetailModal } from "@/components/FileDetailModal";
 import { TagBadge } from "@/components/TagBadge";
@@ -35,11 +44,13 @@ export const MainSearchScreen: React.FC = () => {
     keyword,
     filters,
     activeTab,
+    sortBy,
     setKeyword,
     toggleFileType,
     setActiveTab,
     setFilters,
     setDateRange,
+    setSortBy,
   } = useSearchStore();
 
   const {
@@ -55,6 +66,9 @@ export const MainSearchScreen: React.FC = () => {
   } = useSearchData();
 
   const { openModal } = useFileDetailStore();
+
+  // Sort results
+  const sortedResults = useSortedResults(searchResults, sortBy);
 
   // File type icon mapping
   const getFileIcon = (fileType: string) => {
@@ -97,96 +111,131 @@ export const MainSearchScreen: React.FC = () => {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="flex gap-2 mb-4 flex-wrap">
-          {/* Tag Filter Button */}
-          <Button
-            variant={filters.tags.length > 0 ? "default" : "outline"}
-            size="sm"
-            className="gap-1"
-            onClick={() => setTagFilterOpen(true)}
-          >
-            <Tag className="h-4 w-4" />
-            タグ
-            {filters.tags.length > 0 && (
-              <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/20 rounded-full">
-                {filters.tags.length}
-              </span>
-            )}
-          </Button>
+        {/* Sort and Filters */}
+        <div className="flex items-center gap-4 mb-4">
+          {/* Sort Dropdown */}
+          <div className="flex items-center gap-2">
+            <ArrowUpDown className="h-4 w-4 text-gray-500" />
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value={SORT_OPTIONS.RELEVANCE}>関連度順</SelectItem>
+                <SelectItem value={SORT_OPTIONS.DATE_DESC}>
+                  日付(新しい順)
+                </SelectItem>
+                <SelectItem value={SORT_OPTIONS.DATE_ASC}>
+                  日付(古い順)
+                </SelectItem>
+                <SelectItem value={SORT_OPTIONS.NAME_ASC}>名前(A-Z)</SelectItem>
+                <SelectItem value={SORT_OPTIONS.NAME_DESC}>
+                  名前(Z-A)
+                </SelectItem>
+                <SelectItem value={SORT_OPTIONS.SIZE_DESC}>
+                  サイズ(大きい順)
+                </SelectItem>
+                <SelectItem value={SORT_OPTIONS.SIZE_ASC}>
+                  サイズ(小さい順)
+                </SelectItem>
+                <SelectItem value={SORT_OPTIONS.FREQUENT}>
+                  アクセス頻度順
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
 
-          {/* Date Range Filter Button */}
-          <Button
-            variant={
-              filters.dateRange.startDate || filters.dateRange.endDate
-                ? "default"
-                : "outline"
-            }
-            size="sm"
-            className="gap-1"
-            onClick={() => setDateFilterOpen(true)}
-          >
-            <Calendar className="h-4 w-4" />
-            日付範囲
-          </Button>
+          {/* Filter Buttons */}
+          <div className="flex gap-2 flex-wrap">
+            {/* Tag Filter Button */}
+            <Button
+              variant={filters.tags.length > 0 ? "default" : "outline"}
+              size="sm"
+              className="gap-1"
+              onClick={() => setTagFilterOpen(true)}
+            >
+              <Tag className="h-4 w-4" />
+              タグ
+              {filters.tags.length > 0 && (
+                <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/20 rounded-full">
+                  {filters.tags.length}
+                </span>
+              )}
+            </Button>
 
-          {/* File Type Filters */}
-          <div className="flex gap-1">
+            {/* Date Range Filter Button */}
             <Button
               variant={
-                filters.fileTypes.includes(FILE_TYPES.PDF)
+                filters.dateRange.startDate || filters.dateRange.endDate
                   ? "default"
                   : "outline"
               }
               size="sm"
-              onClick={() => toggleFileType(FILE_TYPES.PDF)}
               className="gap-1"
+              onClick={() => setDateFilterOpen(true)}
             >
-              <FileText className="h-4 w-4" />
-              PDF
+              <Calendar className="h-4 w-4" />
+              日付範囲
             </Button>
 
-            <Button
-              variant={
-                filters.fileTypes.includes(FILE_TYPES.EXCEL)
-                  ? "default"
-                  : "outline"
-              }
-              size="sm"
-              onClick={() => toggleFileType(FILE_TYPES.EXCEL)}
-              className="gap-1"
-            >
-              <FileSpreadsheet className="h-4 w-4" />
-              Excel
-            </Button>
+            {/* File Type Filters */}
+            <div className="flex gap-1">
+              <Button
+                variant={
+                  filters.fileTypes.includes(FILE_TYPES.PDF)
+                    ? "default"
+                    : "outline"
+                }
+                size="sm"
+                onClick={() => toggleFileType(FILE_TYPES.PDF)}
+                className="gap-1"
+              >
+                <FileText className="h-4 w-4" />
+                PDF
+              </Button>
 
-            <Button
-              variant={
-                filters.fileTypes.includes(FILE_TYPES.WORD)
-                  ? "default"
-                  : "outline"
-              }
-              size="sm"
-              onClick={() => toggleFileType(FILE_TYPES.WORD)}
-              className="gap-1"
-            >
-              <File className="h-4 w-4" />
-              Word
-            </Button>
+              <Button
+                variant={
+                  filters.fileTypes.includes(FILE_TYPES.EXCEL)
+                    ? "default"
+                    : "outline"
+                }
+                size="sm"
+                onClick={() => toggleFileType(FILE_TYPES.EXCEL)}
+                className="gap-1"
+              >
+                <FileSpreadsheet className="h-4 w-4" />
+                Excel
+              </Button>
 
-            <Button
-              variant={
-                filters.fileTypes.includes(FILE_TYPES.POWERPOINT)
-                  ? "default"
-                  : "outline"
-              }
-              size="sm"
-              onClick={() => toggleFileType(FILE_TYPES.POWERPOINT)}
-              className="gap-1"
-            >
-              <Presentation className="h-4 w-4" />
-              PPT
-            </Button>
+              <Button
+                variant={
+                  filters.fileTypes.includes(FILE_TYPES.WORD)
+                    ? "default"
+                    : "outline"
+                }
+                size="sm"
+                onClick={() => toggleFileType(FILE_TYPES.WORD)}
+                className="gap-1"
+              >
+                <File className="h-4 w-4" />
+                Word
+              </Button>
+
+              <Button
+                variant={
+                  filters.fileTypes.includes(FILE_TYPES.POWERPOINT)
+                    ? "default"
+                    : "outline"
+                }
+                size="sm"
+                onClick={() => toggleFileType(FILE_TYPES.POWERPOINT)}
+                className="gap-1"
+              >
+                <Presentation className="h-4 w-4" />
+                PPT
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -204,7 +253,7 @@ export const MainSearchScreen: React.FC = () => {
           {/* Search Results Tab */}
           <TabsContent value={TAB_TYPES.SEARCH_RESULTS}>
             <ResultList
-              results={searchResults}
+              results={sortedResults}
               isSearching={isSearching}
               error={error}
               onToggleFavorite={toggleFavorite}
@@ -220,7 +269,7 @@ export const MainSearchScreen: React.FC = () => {
           {/* Favorites Tab */}
           <TabsContent value={TAB_TYPES.FAVORITES}>
             <ResultList
-              results={searchResults}
+              results={sortedResults}
               isSearching={isSearching}
               error={error}
               onToggleFavorite={toggleFavorite}
@@ -236,7 +285,7 @@ export const MainSearchScreen: React.FC = () => {
           {/* Recent Tab */}
           <TabsContent value={TAB_TYPES.RECENT}>
             <ResultList
-              results={searchResults}
+              results={sortedResults}
               isSearching={isSearching}
               error={error}
               onToggleFavorite={toggleFavorite}
