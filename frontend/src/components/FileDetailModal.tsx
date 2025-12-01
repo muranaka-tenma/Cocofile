@@ -15,6 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useFileDetailStore } from "@/store/fileDetailStore";
 import { RealFileService } from "@/services/RealFileService";
 import { TagBadge } from "@/components/TagBadge";
+import { useTagSuggestions } from "@/hooks/useTagSuggestions";
 import {
   FileText,
   Star,
@@ -55,6 +56,7 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
   } = useFileDetailStore();
 
   const [newTag, setNewTag] = useState("");
+  const { suggestions } = useTagSuggestions(fileMetadata);
 
   // Handle tag addition
   const handleAddTag = () => {
@@ -277,6 +279,31 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
                 />
               ))}
             </div>
+
+            {/* Tag suggestions */}
+            {suggestions.length > 0 && (
+              <div className="space-y-2 pt-2 border-t">
+                <p className="text-xs text-muted-foreground font-medium">
+                  おすすめのタグ
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.tag}
+                      onClick={() => {
+                        if (!editedTags.includes(suggestion.tag)) {
+                          addTag(suggestion.tag);
+                        }
+                      }}
+                      className="px-3 py-1 text-xs rounded-full border border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors"
+                      title={suggestion.reason}
+                    >
+                      + {suggestion.tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Memo editing section */}
