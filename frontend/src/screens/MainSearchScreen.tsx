@@ -17,13 +17,13 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useSearchStore } from "@/store/searchStore";
 import { useSearchData } from "@/hooks/useSearchData";
 import { useFileDetailStore } from "@/store/fileDetailStore";
 import { TAB_TYPES, FILE_TYPES } from "@/types";
 import { FileDetailModal } from "@/components/FileDetailModal";
+import { TagBadge } from "@/components/TagBadge";
 
 export const MainSearchScreen: React.FC = () => {
   const {
@@ -333,9 +333,7 @@ const ResultList: React.FC<ResultListProps> = ({
             {result.metadata.tags && result.metadata.tags.length > 0 && (
               <div className="flex gap-1 flex-wrap mb-2">
                 {result.metadata.tags.map((tag: string) => (
-                  <Badge key={tag} variant="default" className="text-xs">
-                    {tag}
-                  </Badge>
+                  <TagBadge key={tag} tagName={tag} size="sm" />
                 ))}
               </div>
             )}

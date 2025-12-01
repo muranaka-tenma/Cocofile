@@ -12,9 +12,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { useFileDetailStore } from "@/store/fileDetailStore";
 import { RealFileService } from "@/services/RealFileService";
+import { TagBadge } from "@/components/TagBadge";
 import {
   FileText,
   Star,
@@ -271,19 +271,11 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
 
             <div className="flex flex-wrap gap-2">
               {editedTags.map((tag) => (
-                <Badge
+                <TagBadge
                   key={tag}
-                  variant="secondary"
-                  className="px-3 py-1.5 text-sm"
-                >
-                  {tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="ml-2 hover:text-destructive"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </Badge>
+                  tagName={tag}
+                  onRemove={() => handleRemoveTag(tag)}
+                />
               ))}
             </div>
           </div>
