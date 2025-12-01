@@ -1,23 +1,23 @@
 // CocoFile - S-004 Tag Management Screen
 // タグ管理画面
 
-import React, { useState, useEffect } from 'react';
-import { Tag, Edit, Trash2, Merge, Trash } from 'lucide-react';
-import { useTagManagement } from '@/hooks/useTagManagement';
-import { TAG_SORT_ORDER } from '@/types';
-import type { TagStatistics } from '@/types';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import React, { useState, useEffect } from "react";
+import { Tag, Edit, Trash2, Merge, Trash } from "lucide-react";
+import { useTagManagement } from "@/hooks/useTagManagement";
+import { TAG_SORT_ORDER } from "@/types";
+import type { TagStatistics } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
+} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -25,7 +25,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 
 export const TagManagementScreen: React.FC = () => {
   const {
@@ -62,7 +62,7 @@ export const TagManagementScreen: React.FC = () => {
   } | null>(null);
 
   // Merge form state
-  const [mergeTargetName, setMergeTargetName] = useState('');
+  const [mergeTargetName, setMergeTargetName] = useState("");
 
   // Delete target
   const [deletingTagId, setDeletingTagId] = useState<string | null>(null);
@@ -99,7 +99,7 @@ export const TagManagementScreen: React.FC = () => {
       setEditDialogOpen(false);
       setEditingTag(null);
     } catch (error) {
-      console.error('Failed to update tag:', error);
+      console.error("Failed to update tag:", error);
     }
   };
 
@@ -117,7 +117,7 @@ export const TagManagementScreen: React.FC = () => {
       setDeleteDialogOpen(false);
       setDeletingTagId(null);
     } catch (error) {
-      console.error('Failed to delete tag:', error);
+      console.error("Failed to delete tag:", error);
     }
   };
 
@@ -136,9 +136,9 @@ export const TagManagementScreen: React.FC = () => {
     try {
       await mergeTags(selectedTagIds, mergeTargetName.trim());
       setMergeDialogOpen(false);
-      setMergeTargetName('');
+      setMergeTargetName("");
     } catch (error) {
-      console.error('Failed to merge tags:', error);
+      console.error("Failed to merge tags:", error);
     }
   };
 
@@ -152,7 +152,7 @@ export const TagManagementScreen: React.FC = () => {
       await deleteUnusedTags();
       setDeleteUnusedDialogOpen(false);
     } catch (error) {
-      console.error('Failed to delete unused tags:', error);
+      console.error("Failed to delete unused tags:", error);
     }
   };
 
@@ -161,7 +161,7 @@ export const TagManagementScreen: React.FC = () => {
     try {
       await updateTag(tagId, newColor);
     } catch (error) {
-      console.error('Failed to update tag color:', error);
+      console.error("Failed to update tag color:", error);
     }
   };
 
@@ -188,8 +188,8 @@ export const TagManagementScreen: React.FC = () => {
         {statistics && (
           <Card className="mb-6 bg-gray-50 p-4">
             <div className="text-sm text-gray-600">
-              全タグ数: <strong>{statistics.totalTags}</strong> | 使用中:{' '}
-              <strong>{statistics.usedTags}</strong> | 未使用:{' '}
+              全タグ数: <strong>{statistics.totalTags}</strong> | 使用中:{" "}
+              <strong>{statistics.usedTags}</strong> | 未使用:{" "}
               <strong>{statistics.unusedTags}</strong>
             </div>
           </Card>
@@ -260,7 +260,7 @@ export const TagManagementScreen: React.FC = () => {
                 <div
                   key={tag.id}
                   className={`flex items-center gap-4 p-4 transition-colors hover:bg-gray-50 ${
-                    selectedTagIds.includes(tag.id) ? 'bg-blue-50' : ''
+                    selectedTagIds.includes(tag.id) ? "bg-blue-50" : ""
                   }`}
                 >
                   {/* Checkbox */}
@@ -274,7 +274,9 @@ export const TagManagementScreen: React.FC = () => {
                     <input
                       type="color"
                       value={tag.color}
-                      onChange={(e) => handleColorChange(tag.id, e.target.value)}
+                      onChange={(e) =>
+                        handleColorChange(tag.id, e.target.value)
+                      }
                       className="h-6 w-6 cursor-pointer rounded-full border-2 border-gray-300"
                       title="カラーを変更"
                     />
@@ -354,10 +356,7 @@ export const TagManagementScreen: React.FC = () => {
             </div>
           )}
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setEditDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
               キャンセル
             </Button>
             <Button onClick={handleEditSave}>保存</Button>
@@ -423,10 +422,7 @@ export const TagManagementScreen: React.FC = () => {
             </div>
           </div>
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setMergeDialogOpen(false)}
-            >
+            <Button variant="outline" onClick={() => setMergeDialogOpen(false)}>
               キャンセル
             </Button>
             <Button

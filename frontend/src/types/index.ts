@@ -6,25 +6,25 @@
 // ============================================================================
 
 export const FILE_TYPES = {
-  PDF: 'pdf',
-  EXCEL: 'excel',
-  WORD: 'word',
-  POWERPOINT: 'powerpoint',
+  PDF: "pdf",
+  EXCEL: "excel",
+  WORD: "word",
+  POWERPOINT: "powerpoint",
 } as const;
 
-export type FileType = typeof FILE_TYPES[keyof typeof FILE_TYPES];
+export type FileType = (typeof FILE_TYPES)[keyof typeof FILE_TYPES];
 
 // ============================================================================
 // Tab Types
 // ============================================================================
 
 export const TAB_TYPES = {
-  SEARCH_RESULTS: 'search_results',
-  FAVORITES: 'favorites',
-  RECENT: 'recent',
+  SEARCH_RESULTS: "search_results",
+  FAVORITES: "favorites",
+  RECENT: "recent",
 } as const;
 
-export type TabType = typeof TAB_TYPES[keyof typeof TAB_TYPES];
+export type TabType = (typeof TAB_TYPES)[keyof typeof TAB_TYPES];
 
 // ============================================================================
 // Filter Types
@@ -140,12 +140,13 @@ export interface TabState {
 // ============================================================================
 
 export const SCAN_TIMING_TYPES = {
-  REALTIME: 'realtime',
-  IDLE: 'idle',
-  MANUAL: 'manual',
+  REALTIME: "realtime",
+  IDLE: "idle",
+  MANUAL: "manual",
 } as const;
 
-export type ScanTimingType = typeof SCAN_TIMING_TYPES[keyof typeof SCAN_TIMING_TYPES];
+export type ScanTimingType =
+  (typeof SCAN_TIMING_TYPES)[keyof typeof SCAN_TIMING_TYPES];
 
 export interface AppSettings {
   // Monitoring settings
@@ -161,7 +162,7 @@ export interface AppSettings {
     y: number;
   };
   autoHide: boolean;
-  theme: 'light' | 'dark';
+  theme: "light" | "dark";
 
   // Tag settings
   defaultTags: string[];
@@ -276,12 +277,12 @@ export interface FileDetailFormData {
 // ============================================================================
 
 export const TAG_SORT_ORDER = {
-  USAGE: 'usage',
-  NAME: 'name',
-  CREATED: 'created',
+  USAGE: "usage",
+  NAME: "name",
+  CREATED: "created",
 } as const;
 
-export type TagSortOrder = typeof TAG_SORT_ORDER[keyof typeof TAG_SORT_ORDER];
+export type TagSortOrder = (typeof TAG_SORT_ORDER)[keyof typeof TAG_SORT_ORDER];
 
 export interface TagStatistics {
   totalTags: number;
@@ -331,25 +332,25 @@ export interface ApiResponse<T> {
 
 export const API_PATHS = {
   TAGS: {
-    LIST: '/api/tags',
+    LIST: "/api/tags",
     DETAIL: (id: string) => `/api/tags/${id}`,
-    CREATE: '/api/tags',
+    CREATE: "/api/tags",
     UPDATE: (id: string) => `/api/tags/${id}`,
     DELETE: (id: string) => `/api/tags/${id}`,
-    MERGE: '/api/tags/merge',
-    DELETE_UNUSED: '/api/tags/unused',
-    STATISTICS: '/api/tags/statistics',
+    MERGE: "/api/tags/merge",
+    DELETE_UNUSED: "/api/tags/unused",
+    STATISTICS: "/api/tags/statistics",
   },
   SCAN: {
-    START: '/api/scan/start',
-    STATUS: '/api/scan/status',
-    STOP: '/api/scan/stop',
+    START: "/api/scan/start",
+    STATUS: "/api/scan/status",
+    STOP: "/api/scan/stop",
   },
   INDEX: {
-    STATISTICS: '/api/index/statistics',
-    DUPLICATES: '/api/index/duplicates',
-    CLEANUP: '/api/index/cleanup',
-    REBUILD: '/api/index/rebuild',
+    STATISTICS: "/api/index/statistics",
+    DUPLICATES: "/api/index/duplicates",
+    CLEANUP: "/api/index/cleanup",
+    REBUILD: "/api/index/rebuild",
   },
 } as const;
 
@@ -358,14 +359,14 @@ export const API_PATHS = {
 // ============================================================================
 
 export const SCAN_STATUS = {
-  IDLE: 'idle',
-  SCANNING: 'scanning',
-  PAUSED: 'paused',
-  COMPLETED: 'completed',
-  ERROR: 'error',
+  IDLE: "idle",
+  SCANNING: "scanning",
+  PAUSED: "paused",
+  COMPLETED: "completed",
+  ERROR: "error",
 } as const;
 
-export type ScanStatus = typeof SCAN_STATUS[keyof typeof SCAN_STATUS];
+export type ScanStatus = (typeof SCAN_STATUS)[keyof typeof SCAN_STATUS];
 
 // ============================================================================
 // Duplicate File Types (S-003)
@@ -459,8 +460,8 @@ export interface MoveHistoryEntry {
   userConfirmed: boolean;
 }
 
-export type CloudProvider = 'OneDrive' | 'GoogleDrive' | 'Dropbox';
-export type SyncStatus = 'Synced' | 'Syncing' | 'OnlineOnly' | 'Unknown';
+export type CloudProvider = "OneDrive" | "GoogleDrive" | "Dropbox";
+export type SyncStatus = "Synced" | "Syncing" | "OnlineOnly" | "Unknown";
 
 export interface CloudFileStatus {
   isCloudFile: boolean;

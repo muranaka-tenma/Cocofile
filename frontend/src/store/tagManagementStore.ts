@@ -1,8 +1,8 @@
 // CocoFile - Tag Management Store (Zustand)
 
-import { create } from 'zustand';
-import { TAG_SORT_ORDER } from '@/types';
-import type { TagManagementItem, TagSortOrder } from '@/types';
+import { create } from "zustand";
+import { TAG_SORT_ORDER } from "@/types";
+import type { TagManagementItem, TagSortOrder } from "@/types";
 
 interface TagManagementState {
   // Tag list
@@ -82,7 +82,7 @@ export const useTagManagementStore = create<TagManagementState>((set) => ({
   updateTag: (tagId, updates) =>
     set((state) => ({
       tags: state.tags.map((tag) =>
-        tag.id === tagId ? { ...tag, ...updates } : tag
+        tag.id === tagId ? { ...tag, ...updates } : tag,
       ),
     })),
 

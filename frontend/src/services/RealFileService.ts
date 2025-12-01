@@ -1,14 +1,14 @@
 // CocoFile - Real File Service (Tauri API Integration)
 // Phase 1: Basic search integration with Tauri backend
 
-import { TauriService } from './TauriService';
+import { TauriService } from "./TauriService";
 import type {
   SearchResult,
   FileMetadata,
   SearchFilters,
   FileType,
-} from '@/types';
-import { FILE_TYPES } from '@/types';
+} from "@/types";
+import { FILE_TYPES } from "@/types";
 
 /**
  * Real File Service - Tauri API統合版
@@ -21,11 +21,11 @@ export class RealFileService {
    */
   async searchFiles(
     keyword?: string,
-    filters?: Partial<SearchFilters>
+    filters?: Partial<SearchFilters>,
   ): Promise<SearchResult[]> {
     try {
       // キーワードが空の場合は空配列を返す
-      if (!keyword || keyword.trim() === '') {
+      if (!keyword || keyword.trim() === "") {
         return [];
       }
 
@@ -34,7 +34,7 @@ export class RealFileService {
 
       // Tauri結果をフロントエンド型に変換
       const searchResults: SearchResult[] = tauriResults.map((result) =>
-        this.convertToSearchResult(result)
+        this.convertToSearchResult(result),
       );
 
       // フィルター適用（Phase 1ではファイル種別のみ）
@@ -42,20 +42,20 @@ export class RealFileService {
 
       if (filters?.fileTypes && filters.fileTypes.length > 0) {
         filteredResults = filteredResults.filter((result) =>
-          filters.fileTypes!.includes(result.fileType)
+          filters.fileTypes!.includes(result.fileType),
         );
       }
 
       // タグフィルターは Phase 2 で実装（バックエンドでタグ取得が必要）
       if (filters?.tags && filters.tags.length > 0) {
-        console.warn('Tag filtering not yet implemented (Phase 2)');
+        console.warn("Tag filtering not yet implemented (Phase 2)");
       }
 
       return filteredResults;
     } catch (error) {
-      console.error('Search files error:', error);
+      console.error("Search files error:", error);
       throw new Error(
-        error instanceof Error ? error.message : 'Failed to search files'
+        error instanceof Error ? error.message : "Failed to search files",
       );
     }
   }
@@ -69,8 +69,8 @@ export class RealFileService {
       const tauriResults = await TauriService.getFavorites();
       return tauriResults.map((result) => this.convertToSearchResult(result));
     } catch (error) {
-      console.error('Get favorites error:', error);
-      throw new Error('Failed to get favorites');
+      console.error("Get favorites error:", error);
+      throw new Error("Failed to get favorites");
     }
   }
 
@@ -83,8 +83,8 @@ export class RealFileService {
       const tauriResults = await TauriService.getRecentFiles();
       return tauriResults.map((result) => this.convertToSearchResult(result));
     } catch (error) {
-      console.error('Get recent files error:', error);
-      throw new Error('Failed to get recent files');
+      console.error("Get recent files error:", error);
+      throw new Error("Failed to get recent files");
     }
   }
 
@@ -96,8 +96,8 @@ export class RealFileService {
     try {
       await TauriService.toggleFavorite(filePath);
     } catch (error) {
-      console.error('Toggle favorite error:', error);
-      throw new Error('Failed to toggle favorite');
+      console.error("Toggle favorite error:", error);
+      throw new Error("Failed to toggle favorite");
     }
   }
 
@@ -107,13 +107,13 @@ export class RealFileService {
    */
   async openFile(filePath: string): Promise<void> {
     try {
-      const { open } = await import('@tauri-apps/plugin-shell');
+      const { open } = await import("@tauri-apps/plugin-shell");
       await open(filePath);
       // アクセス記録を更新
       await TauriService.recordFileAccess(filePath);
     } catch (error) {
-      console.error('Failed to open file:', error);
-      throw new Error('Failed to open file');
+      console.error("Failed to open file:", error);
+      throw new Error("Failed to open file");
     }
   }
 
@@ -123,13 +123,13 @@ export class RealFileService {
    */
   async openFileLocation(filePath: string): Promise<void> {
     try {
-      const { open } = await import('@tauri-apps/plugin-shell');
+      const { open } = await import("@tauri-apps/plugin-shell");
       // ファイルパスからディレクトリを抽出
-      const directory = filePath.substring(0, filePath.lastIndexOf('/'));
+      const directory = filePath.substring(0, filePath.lastIndexOf("/"));
       await open(directory);
     } catch (error) {
-      console.error('Failed to open folder:', error);
-      throw new Error('Failed to open folder');
+      console.error("Failed to open folder:", error);
+      throw new Error("Failed to open folder");
     }
   }
 
@@ -138,7 +138,7 @@ export class RealFileService {
    * Phase 2: バックエンドAPI実装後に統合
    */
   async getFileDetails(filePath: string): Promise<FileMetadata | null> {
-    console.warn('File details not yet implemented (Phase 2):', filePath);
+    console.warn("File details not yet implemented (Phase 2):", filePath);
     return null;
   }
 
@@ -147,7 +147,7 @@ export class RealFileService {
    * Phase 2: バックエンドAPI実装後に統合
    */
   async getFileMetadata(filePath: string): Promise<FileMetadata | null> {
-    console.warn('Get file metadata not yet implemented (Phase 2):', filePath);
+    console.warn("Get file metadata not yet implemented (Phase 2):", filePath);
     return null;
   }
 
@@ -159,8 +159,8 @@ export class RealFileService {
     try {
       await TauriService.updateFileTags(filePath, tags);
     } catch (error) {
-      console.error('Update tags error:', error);
-      throw new Error('Failed to update tags');
+      console.error("Update tags error:", error);
+      throw new Error("Failed to update tags");
     }
   }
 
@@ -170,7 +170,7 @@ export class RealFileService {
    * TODO: Rust側にupdate_file_memo APIを追加する必要あり
    */
   async updateMemo(filePath: string, memo: string): Promise<void> {
-    console.warn('Update memo API not yet exposed (TODO):', filePath, memo);
+    console.warn("Update memo API not yet exposed (TODO):", filePath, memo);
     // Rust側にAPIを追加する必要がある
   }
 
@@ -178,9 +178,9 @@ export class RealFileService {
    * Format file size to human-readable format
    */
   formatFileSize(bytes: number): string {
-    if (bytes === 0) return '0 B';
+    if (bytes === 0) return "0 B";
     const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+    const sizes = ["B", "KB", "MB", "GB", "TB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
     return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
   }
@@ -205,7 +205,7 @@ export class RealFileService {
     } else if (diffMinutes > 0) {
       return `${diffMinutes}分前`;
     } else {
-      return 'たった今';
+      return "たった今";
     }
   }
 
@@ -214,7 +214,7 @@ export class RealFileService {
    * Phase 1: 最小限の変換（メタデータは Phase 2 で完全実装）
    */
   private convertToSearchResult(
-    tauriResult: Awaited<ReturnType<typeof TauriService.searchFiles>>[0]
+    tauriResult: Awaited<ReturnType<typeof TauriService.searchFiles>>[0],
   ): SearchResult {
     // ファイル拡張子から FileType を推定
     const fileType = this.inferFileType(tauriResult.file_type);
@@ -225,8 +225,8 @@ export class RealFileService {
       filePath: tauriResult.file_path,
       fileType,
       fileSize: tauriResult.file_size,
-      hashValue: '', // Phase 2で実装
-      extractedText: tauriResult.snippet || '',
+      hashValue: "", // Phase 2で実装
+      extractedText: tauriResult.snippet || "",
       extractedKeywords: [],
       tags: [], // Phase 2で実装
       isFavorite: false, // Phase 2で実装
@@ -256,15 +256,15 @@ export class RealFileService {
   private inferFileType(fileTypeStr: string): FileType {
     const lowerType = fileTypeStr.toLowerCase();
 
-    if (lowerType === 'pdf') return FILE_TYPES.PDF;
-    if (lowerType === 'xlsx' || lowerType === 'xls' || lowerType === 'excel')
+    if (lowerType === "pdf") return FILE_TYPES.PDF;
+    if (lowerType === "xlsx" || lowerType === "xls" || lowerType === "excel")
       return FILE_TYPES.EXCEL;
-    if (lowerType === 'docx' || lowerType === 'doc' || lowerType === 'word')
+    if (lowerType === "docx" || lowerType === "doc" || lowerType === "word")
       return FILE_TYPES.WORD;
     if (
-      lowerType === 'pptx' ||
-      lowerType === 'ppt' ||
-      lowerType === 'powerpoint'
+      lowerType === "pptx" ||
+      lowerType === "ppt" ||
+      lowerType === "powerpoint"
     )
       return FILE_TYPES.POWERPOINT;
 

@@ -1,9 +1,9 @@
-import React, { useEffect, useState } from 'react';
-import { organizationService } from '../services/OrganizationService';
-import type { OrganizationSuggestion, OrganizationSummary } from '../types';
-import { Button } from '../components/ui/button';
-import { Card } from '../components/ui/card';
-import { Badge } from '../components/ui/badge';
+import React, { useEffect, useState } from "react";
+import { organizationService } from "../services/OrganizationService";
+import type { OrganizationSuggestion, OrganizationSummary } from "../types";
+import { Button } from "../components/ui/button";
+import { Card } from "../components/ui/card";
+import { Badge } from "../components/ui/badge";
 
 /**
  * S-006: ファイル整理画面
@@ -37,7 +37,9 @@ const FileOrganizationScreen: React.FC = () => {
         completed: 0,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : '提案の読み込みに失敗しました');
+      setError(
+        err instanceof Error ? err.message : "提案の読み込みに失敗しました",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -68,7 +70,7 @@ const FileOrganizationScreen: React.FC = () => {
     try {
       await organizationService.applyOrganizationSuggestion(
         filePath,
-        destination
+        destination,
       );
       // 成功したら提案リストから削除
       setSuggestions((prev) => prev.filter((s) => s.filePath !== filePath));
@@ -78,7 +80,9 @@ const FileOrganizationScreen: React.FC = () => {
         needsOrganization: prev.needsOrganization - 1,
       }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'ファイル移動に失敗しました');
+      setError(
+        err instanceof Error ? err.message : "ファイル移動に失敗しました",
+      );
     }
   };
 
@@ -101,7 +105,7 @@ const FileOrganizationScreen: React.FC = () => {
       if (result.successCount > 0) {
         const movedFiles = new Set(moves.map((m) => m.source));
         setSuggestions((prev) =>
-          prev.filter((s) => !movedFiles.has(s.filePath))
+          prev.filter((s) => !movedFiles.has(s.filePath)),
         );
         setSummary((prev) => ({
           ...prev,
@@ -114,11 +118,11 @@ const FileOrganizationScreen: React.FC = () => {
       // エラーがあれば表示
       if (result.failedCount > 0) {
         setError(
-          `${result.failedCount}件のファイル移動に失敗しました:\n${result.errors.join('\n')}`
+          `${result.failedCount}件のファイル移動に失敗しました:\n${result.errors.join("\n")}`,
         );
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : '一括移動に失敗しました');
+      setError(err instanceof Error ? err.message : "一括移動に失敗しました");
     } finally {
       setIsLoading(false);
     }
@@ -126,9 +130,9 @@ const FileOrganizationScreen: React.FC = () => {
 
   // 信頼度バッジの色
   const getConfidenceBadgeColor = (confidence: number) => {
-    if (confidence >= 0.9) return 'bg-green-500';
-    if (confidence >= 0.7) return 'bg-yellow-500';
-    return 'bg-gray-500';
+    if (confidence >= 0.9) return "bg-green-500";
+    if (confidence >= 0.7) return "bg-yellow-500";
+    return "bg-gray-500";
   };
 
   return (
@@ -170,9 +174,7 @@ const FileOrganizationScreen: React.FC = () => {
       {/* アクションボタン */}
       <div className="flex gap-2 mb-4">
         <Button onClick={toggleSelectAll} variant="outline">
-          {selectedFiles.size === suggestions.length
-            ? '全選択解除'
-            : '全選択'}
+          {selectedFiles.size === suggestions.length ? "全選択解除" : "全選択"}
         </Button>
         <Button
           onClick={moveSelectedFiles}
@@ -180,7 +182,11 @@ const FileOrganizationScreen: React.FC = () => {
         >
           選択項目を移動 ({selectedFiles.size})
         </Button>
-        <Button onClick={loadSuggestions} variant="outline" disabled={isLoading}>
+        <Button
+          onClick={loadSuggestions}
+          variant="outline"
+          disabled={isLoading}
+        >
           🔄 再読み込み
         </Button>
       </div>
@@ -195,9 +201,7 @@ const FileOrganizationScreen: React.FC = () => {
       {/* ファイル一覧 */}
       <div className="flex-1 overflow-y-auto space-y-3">
         {isLoading && suggestions.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            読み込み中...
-          </div>
+          <div className="text-center py-8 text-gray-500">読み込み中...</div>
         ) : suggestions.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             整理が必要なファイルはありません
@@ -220,7 +224,9 @@ const FileOrganizationScreen: React.FC = () => {
                     <h3 className="font-semibold text-gray-900">
                       {suggestion.fileName}
                     </h3>
-                    <Badge className={getConfidenceBadgeColor(suggestion.confidence)}>
+                    <Badge
+                      className={getConfidenceBadgeColor(suggestion.confidence)}
+                    >
                       信頼度: {Math.round(suggestion.confidence * 100)}%
                     </Badge>
                   </div>
@@ -251,7 +257,7 @@ const FileOrganizationScreen: React.FC = () => {
                       onClick={() =>
                         moveFile(
                           suggestion.filePath,
-                          suggestion.suggestedDestination
+                          suggestion.suggestedDestination,
                         )
                       }
                     >

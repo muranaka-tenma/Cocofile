@@ -1,7 +1,7 @@
 // CocoFile - Main Search Screen (S-001)
 // Desktop window UI for file search with filters and tabs
 
-import React from 'react';
+import React from "react";
 import {
   Search,
   Tag,
@@ -14,16 +14,16 @@ import {
   Folder,
   Loader2,
   SearchX,
-} from 'lucide-react';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { useSearchStore } from '@/store/searchStore';
-import { useSearchData } from '@/hooks/useSearchData';
-import { useFileDetailStore } from '@/store/fileDetailStore';
-import { TAB_TYPES, FILE_TYPES } from '@/types';
-import { FileDetailModal } from '@/components/FileDetailModal';
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useSearchStore } from "@/store/searchStore";
+import { useSearchData } from "@/hooks/useSearchData";
+import { useFileDetailStore } from "@/store/fileDetailStore";
+import { TAB_TYPES, FILE_TYPES } from "@/types";
+import { FileDetailModal } from "@/components/FileDetailModal";
 
 export const MainSearchScreen: React.FC = () => {
   const {
@@ -109,8 +109,8 @@ export const MainSearchScreen: React.FC = () => {
             <Button
               variant={
                 filters.fileTypes.includes(FILE_TYPES.PDF)
-                  ? 'default'
-                  : 'outline'
+                  ? "default"
+                  : "outline"
               }
               size="sm"
               onClick={() => toggleFileType(FILE_TYPES.PDF)}
@@ -123,8 +123,8 @@ export const MainSearchScreen: React.FC = () => {
             <Button
               variant={
                 filters.fileTypes.includes(FILE_TYPES.EXCEL)
-                  ? 'default'
-                  : 'outline'
+                  ? "default"
+                  : "outline"
               }
               size="sm"
               onClick={() => toggleFileType(FILE_TYPES.EXCEL)}
@@ -137,8 +137,8 @@ export const MainSearchScreen: React.FC = () => {
             <Button
               variant={
                 filters.fileTypes.includes(FILE_TYPES.WORD)
-                  ? 'default'
-                  : 'outline'
+                  ? "default"
+                  : "outline"
               }
               size="sm"
               onClick={() => toggleFileType(FILE_TYPES.WORD)}
@@ -151,8 +151,8 @@ export const MainSearchScreen: React.FC = () => {
             <Button
               variant={
                 filters.fileTypes.includes(FILE_TYPES.POWERPOINT)
-                  ? 'default'
-                  : 'outline'
+                  ? "default"
+                  : "outline"
               }
               size="sm"
               onClick={() => toggleFileType(FILE_TYPES.POWERPOINT)}
@@ -165,14 +165,13 @@ export const MainSearchScreen: React.FC = () => {
         </div>
 
         {/* Tabs */}
-        <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val as any)}>
+        <Tabs
+          value={activeTab}
+          onValueChange={(val) => setActiveTab(val as any)}
+        >
           <TabsList className="w-full justify-start mb-4">
-            <TabsTrigger value={TAB_TYPES.SEARCH_RESULTS}>
-              検索結果
-            </TabsTrigger>
-            <TabsTrigger value={TAB_TYPES.FAVORITES}>
-              お気に入り
-            </TabsTrigger>
+            <TabsTrigger value={TAB_TYPES.SEARCH_RESULTS}>検索結果</TabsTrigger>
+            <TabsTrigger value={TAB_TYPES.FAVORITES}>お気に入り</TabsTrigger>
             <TabsTrigger value={TAB_TYPES.RECENT}>最近使用</TabsTrigger>
           </TabsList>
 
@@ -318,8 +317,8 @@ const ResultList: React.FC<ResultListProps> = ({
                 <Star
                   className={`h-5 w-5 ${
                     result.metadata.isFavorite
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : 'text-gray-300'
+                      ? "fill-yellow-400 text-yellow-400"
+                      : "text-gray-300"
                   }`}
                 />
               </button>
@@ -344,7 +343,9 @@ const ResultList: React.FC<ResultListProps> = ({
             {/* Meta info */}
             <div className="flex gap-3 text-xs text-gray-400">
               <span>{formatFileSize(result.fileSize)}</span>
-              <span>{result.metadata.createdAt.toLocaleDateString('ja-JP')}</span>
+              <span>
+                {result.metadata.createdAt.toLocaleDateString("ja-JP")}
+              </span>
               <span>
                 最終アクセス: {formatRelativeTime(result.lastAccessedAt)}
               </span>

@@ -1,10 +1,10 @@
 // CocoFile - Tag Management Custom Hook
 // Phase 4: Real API integrated
 
-import { useEffect, useCallback } from 'react';
-import { TauriService } from '@/services/TauriService';
-import { useTagManagementStore } from '@/store/tagManagementStore';
-import type { TagSortOrder } from '@/types';
+import { useEffect, useCallback } from "react";
+import { TauriService } from "@/services/TauriService";
+import { useTagManagementStore } from "@/store/tagManagementStore";
+import type { TagSortOrder } from "@/types";
 
 export const useTagManagement = () => {
   const {
@@ -41,7 +41,7 @@ export const useTagManagement = () => {
       const convertedTags = tauriTags.map((tag) => ({
         id: tag.tag_name,
         name: tag.tag_name,
-        color: tag.color || '#gray',
+        color: tag.color || "#gray",
         useCount: tag.usage_count,
         createdAt: new Date(tag.created_at),
         lastUsedAt: new Date(), // Phase 2で実装予定
@@ -50,7 +50,7 @@ export const useTagManagement = () => {
       setTags(convertedTags);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : 'タグ一覧の取得に失敗しました'
+        err instanceof Error ? err.message : "タグ一覧の取得に失敗しました",
       );
     } finally {
       setLoading(false);
@@ -70,14 +70,14 @@ export const useTagManagement = () => {
         await fetchTags();
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : 'タグの作成に失敗しました'
+          err instanceof Error ? err.message : "タグの作成に失敗しました",
         );
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    [fetchTags, setLoading, setError]
+    [fetchTags, setLoading, setError],
   );
 
   /**
@@ -93,14 +93,14 @@ export const useTagManagement = () => {
         await fetchTags();
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : 'タグの更新に失敗しました'
+          err instanceof Error ? err.message : "タグの更新に失敗しました",
         );
         throw err;
       } finally {
         setLoading(false);
       }
     },
-    [fetchTags, setLoading, setError]
+    [fetchTags, setLoading, setError],
   );
 
   /**
@@ -116,14 +116,14 @@ export const useTagManagement = () => {
         removeTag(tagName);
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : 'タグの削除に失敗しました'
+          err instanceof Error ? err.message : "タグの削除に失敗しました",
         );
         throw err;
       } finally {
         setDeleting(false);
       }
     },
-    [removeTag, setDeleting, setError]
+    [removeTag, setDeleting, setError],
   );
 
   /**
@@ -137,21 +137,21 @@ export const useTagManagement = () => {
 
         // 並列削除
         await Promise.all(
-          tagNames.map((tagName) => TauriService.deleteTag(tagName))
+          tagNames.map((tagName) => TauriService.deleteTag(tagName)),
         );
 
         removeTags(tagNames);
         clearSelection();
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : 'タグの削除に失敗しました'
+          err instanceof Error ? err.message : "タグの削除に失敗しました",
         );
         throw err;
       } finally {
         setDeleting(false);
       }
     },
-    [removeTags, clearSelection, setDeleting, setError]
+    [removeTags, clearSelection, setDeleting, setError],
   );
 
   /**
@@ -159,10 +159,10 @@ export const useTagManagement = () => {
    */
   const mergeTags = useCallback(
     async (_sourceTagNames: string[], _targetTagName: string) => {
-      console.warn('Tag merge not yet implemented (Phase 2)');
-      setError('タグマージ機能は未実装です');
+      console.warn("Tag merge not yet implemented (Phase 2)");
+      setError("タグマージ機能は未実装です");
     },
-    [setError]
+    [setError],
   );
 
   /**
@@ -172,14 +172,14 @@ export const useTagManagement = () => {
     (newSortOrder: TagSortOrder) => {
       setSortOrder(newSortOrder);
     },
-    [setSortOrder]
+    [setSortOrder],
   );
 
   /**
    * タグ統計情報を取得（Phase 2で実装予定）
    */
   const fetchStatistics = useCallback(async () => {
-    console.warn('Tag statistics not yet implemented (Phase 2)');
+    console.warn("Tag statistics not yet implemented (Phase 2)");
     return {
       totalTags: tags.length,
       usedTags: tags.filter((t) => t.useCount > 0).length,
@@ -191,7 +191,7 @@ export const useTagManagement = () => {
    * 未使用タグを一括削除（Phase 2で実装予定）
    */
   const deleteUnusedTags = useCallback(async () => {
-    console.warn('Delete unused tags not yet implemented (Phase 2)');
+    console.warn("Delete unused tags not yet implemented (Phase 2)");
     const unusedTags = tags.filter((t) => t.useCount === 0);
     if (unusedTags.length > 0) {
       await deleteTags(unusedTags.map((t) => t.id));

@@ -1,8 +1,8 @@
 // CocoFile - Scan Index Screen (S-003)
 // Scan execution, index statistics, and duplicate file management
 
-import React, { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import React, { useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import {
   RefreshCw,
   Trash2,
@@ -11,10 +11,10 @@ import {
   Loader2,
   AlertCircle,
   HardDrive,
-} from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { useScanData } from '@/hooks/useScanData';
-import type { DuplicateFileGroup } from '@/types';
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useScanData } from "@/hooks/useScanData";
+import type { DuplicateFileGroup } from "@/types";
 
 export const ScanIndexScreen: React.FC = () => {
   const {
@@ -38,21 +38,25 @@ export const ScanIndexScreen: React.FC = () => {
   const handleFullScan = async () => {
     try {
       setIsFullScanning(true);
-      setOperationMessage('PC全体のスキャンを開始しました。進捗は画面下部に表示されます。');
+      setOperationMessage(
+        "PC全体のスキャンを開始しました。進捗は画面下部に表示されます。",
+      );
 
       // Start scan in background - it will emit progress events
-      invoke('scan_all_drives').then(() => {
-        setIsFullScanning(false);
-        setOperationMessage('PC全体のスキャンが完了しました！');
-        // Refresh statistics after scan completes
-        window.location.reload();
-      }).catch((err) => {
-        console.error('Full scan error:', err);
-        setIsFullScanning(false);
-        setOperationMessage(`スキャンエラー: ${err}`);
-      });
+      invoke("scan_all_drives")
+        .then(() => {
+          setIsFullScanning(false);
+          setOperationMessage("PC全体のスキャンが完了しました！");
+          // Refresh statistics after scan completes
+          window.location.reload();
+        })
+        .catch((err) => {
+          console.error("Full scan error:", err);
+          setIsFullScanning(false);
+          setOperationMessage(`スキャンエラー: ${err}`);
+        });
     } catch (err) {
-      setOperationMessage('PC全体スキャンの開始に失敗しました');
+      setOperationMessage("PC全体スキャンの開始に失敗しました");
       setIsFullScanning(false);
     }
   };
@@ -78,11 +82,11 @@ export const ScanIndexScreen: React.FC = () => {
     try {
       setOperationMessage(null);
       // Open folder picker using Tauri dialog
-      const { open } = await import('@tauri-apps/plugin-dialog');
+      const { open } = await import("@tauri-apps/plugin-dialog");
       const selectedPath = await open({
         directory: true,
         multiple: false,
-        title: 'スキャンするフォルダを選択',
+        title: "スキャンするフォルダを選択",
       });
 
       if (selectedPath) {
@@ -90,8 +94,8 @@ export const ScanIndexScreen: React.FC = () => {
         setOperationMessage(`スキャンを開始しました: ${selectedPath}`);
       }
     } catch (err) {
-      console.error('Scan start error:', err);
-      setOperationMessage('スキャンの開始に失敗しました');
+      console.error("Scan start error:", err);
+      setOperationMessage("スキャンの開始に失敗しました");
     }
   };
 
@@ -99,7 +103,7 @@ export const ScanIndexScreen: React.FC = () => {
   const handleCleanup = async () => {
     if (
       !window.confirm(
-        '存在しないファイルをインデックスから削除します。よろしいですか？'
+        "存在しないファイルをインデックスから削除します。よろしいですか？",
       )
     ) {
       return;
@@ -111,7 +115,7 @@ export const ScanIndexScreen: React.FC = () => {
       const result = await cleanupDatabase();
       setOperationMessage(result.message);
     } catch (err) {
-      setOperationMessage('クリーンアップに失敗しました');
+      setOperationMessage("クリーンアップに失敗しました");
     } finally {
       setIsCleaningUp(false);
     }
@@ -121,7 +125,7 @@ export const ScanIndexScreen: React.FC = () => {
   const handleRebuild = async () => {
     if (
       !window.confirm(
-        'すべてのインデックスを削除して再スキャンします。この処理には時間がかかります。よろしいですか？'
+        "すべてのインデックスを削除して再スキャンします。この処理には時間がかかります。よろしいですか？",
       )
     ) {
       return;
@@ -133,7 +137,7 @@ export const ScanIndexScreen: React.FC = () => {
       const result = await rebuildDatabase();
       setOperationMessage(result.message);
     } catch (err) {
-      setOperationMessage('再構築に失敗しました');
+      setOperationMessage("再構築に失敗しました");
     } finally {
       setIsRebuilding(false);
     }
@@ -184,7 +188,7 @@ export const ScanIndexScreen: React.FC = () => {
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700"
             >
               <HardDrive
-                className={`w-5 h-5 ${isFullScanning ? 'animate-pulse' : ''}`}
+                className={`w-5 h-5 ${isFullScanning ? "animate-pulse" : ""}`}
               />
               PC全体をスキャン
             </Button>
@@ -195,7 +199,7 @@ export const ScanIndexScreen: React.FC = () => {
               className="flex items-center gap-2"
             >
               <RefreshCw
-                className={`w-5 h-5 ${isScanning ? 'animate-spin' : ''}`}
+                className={`w-5 h-5 ${isScanning ? "animate-spin" : ""}`}
               />
               フォルダ指定スキャン
             </Button>
@@ -217,7 +221,7 @@ export const ScanIndexScreen: React.FC = () => {
                 />
               </div>
               <div className="text-sm text-gray-600">
-                {scanSession.processedFiles.toLocaleString()} /{' '}
+                {scanSession.processedFiles.toLocaleString()} /{" "}
                 {scanSession.totalFiles.toLocaleString()} ファイル (
                 {scanSession.progressPercent}%) - 残り約
                 {formatTimeRemaining(scanSession.estimatedTimeRemaining)}
@@ -248,12 +252,12 @@ export const ScanIndexScreen: React.FC = () => {
               <div className="bg-gray-50 rounded p-4">
                 <div className="text-xs text-gray-500 mb-1">最終更新日時</div>
                 <div className="text-base font-medium text-gray-900">
-                  {new Date(statistics.lastUpdatedAt).toLocaleString('ja-JP', {
-                    year: 'numeric',
-                    month: '2-digit',
-                    day: '2-digit',
-                    hour: '2-digit',
-                    minute: '2-digit',
+                  {new Date(statistics.lastUpdatedAt).toLocaleString("ja-JP", {
+                    year: "numeric",
+                    month: "2-digit",
+                    day: "2-digit",
+                    hour: "2-digit",
+                    minute: "2-digit",
                   })}
                 </div>
               </div>

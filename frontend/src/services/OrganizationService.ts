@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from "@tauri-apps/api/core";
 import type {
   OrganizationSuggestion,
   FileMove,
@@ -6,7 +6,7 @@ import type {
   OrganizationRule,
   MoveHistoryEntry,
   CloudFileStatus,
-} from '../types';
+} from "../types";
 
 /**
  * OrganizationService
@@ -21,11 +21,11 @@ class OrganizationService {
   async getOrganizationSuggestions(): Promise<OrganizationSuggestion[]> {
     try {
       const suggestions = await invoke<OrganizationSuggestion[]>(
-        'get_organization_suggestions'
+        "get_organization_suggestions",
       );
       return suggestions;
     } catch (error) {
-      console.error('Failed to get organization suggestions:', error);
+      console.error("Failed to get organization suggestions:", error);
       throw new Error(`提案の取得に失敗しました: ${error}`);
     }
   }
@@ -35,15 +35,15 @@ class OrganizationService {
    */
   async applyOrganizationSuggestion(
     filePath: string,
-    destination: string
+    destination: string,
   ): Promise<void> {
     try {
-      await invoke('apply_organization_suggestion', {
+      await invoke("apply_organization_suggestion", {
         filePath,
         destination,
       });
     } catch (error) {
-      console.error('Failed to apply organization suggestion:', error);
+      console.error("Failed to apply organization suggestion:", error);
       throw new Error(`ファイル移動に失敗しました: ${error}`);
     }
   }
@@ -53,12 +53,12 @@ class OrganizationService {
    */
   async moveFilesBatch(moves: FileMove[]): Promise<BatchMoveResult> {
     try {
-      const result = await invoke<BatchMoveResult>('move_files_batch', {
+      const result = await invoke<BatchMoveResult>("move_files_batch", {
         moves,
       });
       return result;
     } catch (error) {
-      console.error('Failed to move files batch:', error);
+      console.error("Failed to move files batch:", error);
       throw new Error(`一括移動に失敗しました: ${error}`);
     }
   }
@@ -68,10 +68,10 @@ class OrganizationService {
    */
   async getUserRules(): Promise<OrganizationRule[]> {
     try {
-      const rules = await invoke<OrganizationRule[]>('get_user_rules');
+      const rules = await invoke<OrganizationRule[]>("get_user_rules");
       return rules;
     } catch (error) {
-      console.error('Failed to get user rules:', error);
+      console.error("Failed to get user rules:", error);
       throw new Error(`ルール取得に失敗しました: ${error}`);
     }
   }
@@ -81,9 +81,9 @@ class OrganizationService {
    */
   async saveUserRule(rule: OrganizationRule): Promise<void> {
     try {
-      await invoke('save_user_rule', { rule });
+      await invoke("save_user_rule", { rule });
     } catch (error) {
-      console.error('Failed to save user rule:', error);
+      console.error("Failed to save user rule:", error);
       throw new Error(`ルール保存に失敗しました: ${error}`);
     }
   }
@@ -93,9 +93,9 @@ class OrganizationService {
    */
   async deleteUserRule(ruleId: string): Promise<void> {
     try {
-      await invoke('delete_user_rule', { ruleId });
+      await invoke("delete_user_rule", { ruleId });
     } catch (error) {
-      console.error('Failed to delete user rule:', error);
+      console.error("Failed to delete user rule:", error);
       throw new Error(`ルール削除に失敗しました: ${error}`);
     }
   }
@@ -105,12 +105,12 @@ class OrganizationService {
    */
   async getMoveHistory(limit?: number): Promise<MoveHistoryEntry[]> {
     try {
-      const history = await invoke<MoveHistoryEntry[]>('get_move_history', {
+      const history = await invoke<MoveHistoryEntry[]>("get_move_history", {
         limit,
       });
       return history;
     } catch (error) {
-      console.error('Failed to get move history:', error);
+      console.error("Failed to get move history:", error);
       throw new Error(`履歴取得に失敗しました: ${error}`);
     }
   }
@@ -120,13 +120,12 @@ class OrganizationService {
    */
   async detectCloudFileStatus(filePath: string): Promise<CloudFileStatus> {
     try {
-      const status = await invoke<CloudFileStatus>(
-        'detect_cloud_file_status',
-        { filePath }
-      );
+      const status = await invoke<CloudFileStatus>("detect_cloud_file_status", {
+        filePath,
+      });
       return status;
     } catch (error) {
-      console.error('Failed to detect cloud file status:', error);
+      console.error("Failed to detect cloud file status:", error);
       throw new Error(`クラウドステータス検出に失敗しました: ${error}`);
     }
   }

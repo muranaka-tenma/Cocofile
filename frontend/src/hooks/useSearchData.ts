@@ -2,10 +2,10 @@
 // Custom hook for managing search operations and data fetching
 // Phase 1: Integrated with real Tauri backend API
 
-import { useEffect, useCallback } from 'react';
-import { useSearchStore } from '@/store/searchStore';
-import { RealFileService } from '@/services/RealFileService';
-import { TAB_TYPES, type SearchResult } from '@/types';
+import { useEffect, useCallback } from "react";
+import { useSearchStore } from "@/store/searchStore";
+import { RealFileService } from "@/services/RealFileService";
+import { TAB_TYPES, type SearchResult } from "@/types";
 
 const fileService = new RealFileService();
 
@@ -49,8 +49,8 @@ export const useSearchData = () => {
 
       setSearchResults(results);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Search error:', err);
+      setError(err instanceof Error ? err.message : "An error occurred");
+      console.error("Search error:", err);
     } finally {
       setIsSearching(false);
     }
@@ -74,11 +74,13 @@ export const useSearchData = () => {
         // Refresh search results
         await performSearch();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to toggle favorite');
-        console.error('Toggle favorite error:', err);
+        setError(
+          err instanceof Error ? err.message : "Failed to toggle favorite",
+        );
+        console.error("Toggle favorite error:", err);
       }
     },
-    [performSearch, setError]
+    [performSearch, setError],
   );
 
   // Open file in default application
@@ -87,11 +89,11 @@ export const useSearchData = () => {
       try {
         await fileService.openFile(filePath);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to open file');
-        console.error('Open file error:', err);
+        setError(err instanceof Error ? err.message : "Failed to open file");
+        console.error("Open file error:", err);
       }
     },
-    [setError]
+    [setError],
   );
 
   // Open file location in explorer
@@ -100,22 +102,22 @@ export const useSearchData = () => {
       try {
         await fileService.openFileLocation(filePath);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to open folder');
-        console.error('Open folder error:', err);
+        setError(err instanceof Error ? err.message : "Failed to open folder");
+        console.error("Open folder error:", err);
       }
     },
-    [setError]
+    [setError],
   );
 
   // Format helpers (expose from service)
   const formatFileSize = useCallback(
     (bytes: number) => fileService.formatFileSize(bytes),
-    []
+    [],
   );
 
   const formatRelativeTime = useCallback(
     (date: Date) => fileService.formatRelativeTime(date),
-    []
+    [],
   );
 
   return {

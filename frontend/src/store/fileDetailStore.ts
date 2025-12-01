@@ -1,8 +1,8 @@
 // CocoFile - File Detail Modal State Store (Zustand)
 // Manages the state for the file detail modal (S-005)
 
-import { create } from 'zustand';
-import type { FileMetadata } from '@/types';
+import { create } from "zustand";
+import type { FileMetadata } from "@/types";
 
 interface FileDetailState {
   // Modal state
@@ -38,7 +38,7 @@ export const useFileDetailStore = create<FileDetailState>((set, get) => ({
   isOpen: false,
   fileMetadata: null,
   editedTags: [],
-  editedMemo: '',
+  editedMemo: "",
   hasUnsavedChanges: false,
   isLoading: false,
   error: null,
@@ -49,7 +49,7 @@ export const useFileDetailStore = create<FileDetailState>((set, get) => ({
       isOpen: true,
       fileMetadata: metadata,
       editedTags: [...metadata.tags],
-      editedMemo: metadata.memo || '',
+      editedMemo: metadata.memo || "",
       hasUnsavedChanges: false,
       error: null,
     }),
@@ -59,7 +59,7 @@ export const useFileDetailStore = create<FileDetailState>((set, get) => ({
       isOpen: false,
       fileMetadata: null,
       editedTags: [],
-      editedMemo: '',
+      editedMemo: "",
       hasUnsavedChanges: false,
       error: null,
     }),
@@ -68,7 +68,7 @@ export const useFileDetailStore = create<FileDetailState>((set, get) => ({
     set({
       fileMetadata: metadata,
       editedTags: [...metadata.tags],
-      editedMemo: metadata.memo || '',
+      editedMemo: metadata.memo || "",
     }),
 
   // Tag actions
@@ -129,7 +129,7 @@ export const useFileDetailStore = create<FileDetailState>((set, get) => ({
     if (fileMetadata) {
       set({
         editedTags: [...fileMetadata.tags],
-        editedMemo: fileMetadata.memo || '',
+        editedMemo: fileMetadata.memo || "",
         hasUnsavedChanges: false,
       });
     }

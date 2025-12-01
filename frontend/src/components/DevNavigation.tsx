@@ -1,9 +1,9 @@
 // CocoFile - Development Navigation Component
 // Simple navigation for testing different screens during development
 
-import React from 'react';
-import { Button } from '@/components/ui/button';
-import { useNavigationStore } from '@/store/navigationStore';
+import React from "react";
+import { Button } from "@/components/ui/button";
+import { useNavigationStore } from "@/store/navigationStore";
 
 export const DevNavigation: React.FC = () => {
   const { currentScreen, navigateTo } = useNavigationStore();
@@ -16,36 +16,38 @@ export const DevNavigation: React.FC = () => {
       <div className="flex flex-col gap-1">
         <Button
           size="sm"
-          variant={currentScreen === 'main-search' ? 'default' : 'outline'}
-          onClick={() => navigateTo('main-search')}
+          variant={currentScreen === "main-search" ? "default" : "outline"}
+          onClick={() => navigateTo("main-search")}
         >
           Main Search
         </Button>
         <Button
           size="sm"
-          variant={currentScreen === 'scan-index' ? 'default' : 'outline'}
-          onClick={() => navigateTo('scan-index')}
+          variant={currentScreen === "scan-index" ? "default" : "outline"}
+          onClick={() => navigateTo("scan-index")}
         >
           Scan Index
         </Button>
         <Button
           size="sm"
-          variant={currentScreen === 'settings' ? 'default' : 'outline'}
-          onClick={() => navigateTo('settings')}
+          variant={currentScreen === "settings" ? "default" : "outline"}
+          onClick={() => navigateTo("settings")}
         >
           Settings
         </Button>
         <Button
           size="sm"
-          variant={currentScreen === 'tag-management' ? 'default' : 'outline'}
-          onClick={() => navigateTo('tag-management')}
+          variant={currentScreen === "tag-management" ? "default" : "outline"}
+          onClick={() => navigateTo("tag-management")}
         >
           Tag Management
         </Button>
         <Button
           size="sm"
-          variant={currentScreen === 'file-organization' ? 'default' : 'outline'}
-          onClick={() => navigateTo('file-organization')}
+          variant={
+            currentScreen === "file-organization" ? "default" : "outline"
+          }
+          onClick={() => navigateTo("file-organization")}
         >
           File Organization
         </Button>

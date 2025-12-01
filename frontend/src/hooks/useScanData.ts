@@ -1,14 +1,14 @@
 // CocoFile - Scan Data Custom Hook
 // Phase 1: Integrated with real Tauri backend API
 
-import { useState, useEffect, useCallback } from 'react';
-import { RealScanService } from '@/services/RealScanService';
+import { useState, useEffect, useCallback } from "react";
+import { RealScanService } from "@/services/RealScanService";
 import type {
   ScanSession,
   IndexStatistics,
   DuplicateFileGroup,
   DatabaseOperationResult,
-} from '@/types';
+} from "@/types";
 
 const scanService = new RealScanService();
 
@@ -33,7 +33,7 @@ export const useScanData = () => {
       setStatistics(statsData);
       setDuplicates(duplicatesData);
       setScanSession(scanStatus);
-      setIsScanning(scanStatus?.status === 'scanning');
+      setIsScanning(scanStatus?.status === "scanning");
     } catch (err) {
       setError(err as Error);
     } finally {
@@ -57,14 +57,14 @@ export const useScanData = () => {
             const statsData = await scanService.getStatistics();
             setStatistics(statsData);
           } catch (statsErr) {
-            console.warn('Failed to update statistics during scan:', statsErr);
+            console.warn("Failed to update statistics during scan:", statsErr);
           }
 
-          if (status?.status !== 'scanning' && status?.status != null) {
+          if (status?.status !== "scanning" && status?.status != null) {
             setIsScanning(false);
           }
         } catch (err) {
-          console.error('Failed to poll scan status:', err);
+          console.error("Failed to poll scan status:", err);
         }
       }, 1000); // Poll every second
     }
@@ -112,30 +112,32 @@ export const useScanData = () => {
   }, []);
 
   // Cleanup database
-  const cleanupDatabase = useCallback(async (): Promise<DatabaseOperationResult> => {
-    try {
-      const result = await scanService.cleanup();
-      // Refresh statistics after cleanup
-      const statsData = await scanService.getStatistics();
-      setStatistics(statsData);
-      return result;
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    }
-  }, []);
+  const cleanupDatabase =
+    useCallback(async (): Promise<DatabaseOperationResult> => {
+      try {
+        const result = await scanService.cleanup();
+        // Refresh statistics after cleanup
+        const statsData = await scanService.getStatistics();
+        setStatistics(statsData);
+        return result;
+      } catch (err) {
+        setError(err as Error);
+        throw err;
+      }
+    }, []);
 
   // Rebuild database
-  const rebuildDatabase = useCallback(async (): Promise<DatabaseOperationResult> => {
-    try {
-      const result = await scanService.rebuild();
-      setIsScanning(true);
-      return result;
-    } catch (err) {
-      setError(err as Error);
-      throw err;
-    }
-  }, []);
+  const rebuildDatabase =
+    useCallback(async (): Promise<DatabaseOperationResult> => {
+      try {
+        const result = await scanService.rebuild();
+        setIsScanning(true);
+        return result;
+      } catch (err) {
+        setError(err as Error);
+        throw err;
+      }
+    }, []);
 
   return {
     scanSession,

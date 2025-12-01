@@ -1,20 +1,20 @@
 // CocoFile - File Detail Modal Component (S-005)
 // Displays file details with editing capabilities for tags and memo
 
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Badge } from '@/components/ui/badge';
-import { useFileDetailStore } from '@/store/fileDetailStore';
-import { RealFileService } from '@/services/RealFileService';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { useFileDetailStore } from "@/store/fileDetailStore";
+import { RealFileService } from "@/services/RealFileService";
 import {
   FileText,
   Star,
@@ -25,8 +25,8 @@ import {
   X,
   Plus,
   Info,
-} from 'lucide-react';
-import { cn } from '@/lib/utils';
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const fileService = new RealFileService();
 
@@ -55,14 +55,14 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
     markSaved,
   } = useFileDetailStore();
 
-  const [newTag, setNewTag] = useState('');
+  const [newTag, setNewTag] = useState("");
 
   // Handle tag addition
   const handleAddTag = () => {
     const trimmedTag = newTag.trim();
     if (trimmedTag && !editedTags.includes(trimmedTag)) {
       addTag(trimmedTag);
-      setNewTag('');
+      setNewTag("");
     }
   };
 
@@ -86,13 +86,16 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
       await fileService.updateMemo(fileMetadata.filePath, editedMemo);
 
       // Update favorite status if changed
-      if (fileMetadata.isFavorite !== (fileMetadata.isFavorite !== fileMetadata.isFavorite)) {
+      if (
+        fileMetadata.isFavorite !==
+        (fileMetadata.isFavorite !== fileMetadata.isFavorite)
+      ) {
         await fileService.toggleFavorite(fileMetadata.filePath);
       }
 
       // Refresh metadata (Phase 2で完全実装)
       const updatedMetadata = await fileService.getFileMetadata(
-        fileMetadata.filePath
+        fileMetadata.filePath,
       );
       if (updatedMetadata) {
         setFileMetadata(updatedMetadata);
@@ -104,7 +107,7 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
         onFileUpdated();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to save changes');
+      setError(err instanceof Error ? err.message : "Failed to save changes");
     } finally {
       setIsLoading(false);
     }
@@ -128,7 +131,9 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
         onFileUpdated();
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to toggle favorite');
+      setError(
+        err instanceof Error ? err.message : "Failed to toggle favorite",
+      );
     } finally {
       setIsLoading(false);
     }
@@ -141,7 +146,7 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
     try {
       await fileService.openFile(fileMetadata.filePath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to open file');
+      setError(err instanceof Error ? err.message : "Failed to open file");
     }
   };
 
@@ -152,7 +157,7 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
     try {
       await fileService.openFileLocation(fileMetadata.filePath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to open folder');
+      setError(err instanceof Error ? err.message : "Failed to open folder");
     }
   };
 
@@ -161,13 +166,13 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
     if (!fileMetadata) return <FileText className="h-6 w-6" />;
 
     switch (fileMetadata.fileType) {
-      case 'pdf':
+      case "pdf":
         return <FileText className="h-6 w-6 text-red-500" />;
-      case 'excel':
+      case "excel":
         return <FileText className="h-6 w-6 text-green-500" />;
-      case 'word':
+      case "word":
         return <FileText className="h-6 w-6 text-blue-500" />;
-      case 'powerpoint':
+      case "powerpoint":
         return <FileText className="h-6 w-6 text-orange-500" />;
       default:
         return <FileText className="h-6 w-6" />;
@@ -217,16 +222,16 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
               <div>{fileService.formatFileSize(fileMetadata.fileSize)}</div>
 
               <div className="text-muted-foreground font-medium">作成日時</div>
-              <div>{fileMetadata.createdAt.toLocaleString('ja-JP')}</div>
+              <div>{fileMetadata.createdAt.toLocaleString("ja-JP")}</div>
 
               <div className="text-muted-foreground font-medium">更新日時</div>
-              <div>{fileMetadata.updatedAt.toLocaleString('ja-JP')}</div>
+              <div>{fileMetadata.updatedAt.toLocaleString("ja-JP")}</div>
 
               <div className="text-muted-foreground font-medium">
                 最終アクセス
               </div>
               <div>
-                {fileMetadata.lastAccessedAt.toLocaleString('ja-JP')} (
+                {fileMetadata.lastAccessedAt.toLocaleString("ja-JP")} (
                 {fileService.formatRelativeTime(fileMetadata.lastAccessedAt)})
               </div>
 
@@ -251,7 +256,7 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
                 value={newTag}
                 onChange={(e) => setNewTag(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
+                  if (e.key === "Enter") {
                     e.preventDefault();
                     handleAddTag();
                   }
@@ -310,18 +315,18 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
         {/* Footer with action buttons */}
         <DialogFooter className="flex-row justify-between items-center pt-4 border-t">
           <Button
-            variant={fileMetadata.isFavorite ? 'default' : 'outline'}
+            variant={fileMetadata.isFavorite ? "default" : "outline"}
             onClick={handleToggleFavorite}
             disabled={isLoading}
             className={cn(
               fileMetadata.isFavorite &&
-                'bg-yellow-500 hover:bg-yellow-600 text-white'
+                "bg-yellow-500 hover:bg-yellow-600 text-white",
             )}
           >
             <Star
               className={cn(
-                'h-4 w-4 mr-2',
-                fileMetadata.isFavorite && 'fill-current'
+                "h-4 w-4 mr-2",
+                fileMetadata.isFavorite && "fill-current",
               )}
             />
             お気に入り
@@ -351,7 +356,7 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
               disabled={isLoading}
               className="w-full"
             >
-              {isLoading ? '保存中...' : '変更を保存'}
+              {isLoading ? "保存中..." : "変更を保存"}
             </Button>
           </div>
         )}

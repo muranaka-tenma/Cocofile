@@ -1,14 +1,14 @@
 // CocoFile - Real Scan Service (Tauri API Integration)
 // Phase 1: Basic scan and statistics integration
 
-import { TauriService } from './TauriService';
+import { TauriService } from "./TauriService";
 import type {
   ScanSession,
   IndexStatistics,
   DuplicateFileGroup,
   DatabaseOperationResult,
-} from '@/types';
-import { SCAN_STATUS } from '@/types';
+} from "@/types";
+import { SCAN_STATUS } from "@/types";
 
 /**
  * Real Scan Service - Tauri API統合版
@@ -25,7 +25,7 @@ export class RealScanService {
   async startScan(targetFolder?: string): Promise<ScanSession> {
     try {
       if (!targetFolder) {
-        throw new Error('Target folder is required');
+        throw new Error("Target folder is required");
       }
 
       const sessionId = `scan-${Date.now()}`;
@@ -35,7 +35,7 @@ export class RealScanService {
         sessionId,
         status: SCAN_STATUS.SCANNING,
         targetFolder,
-        currentFile: '',
+        currentFile: "",
         processedFiles: 0,
         totalFiles: 0,
         progressPercent: 0,
@@ -47,7 +47,7 @@ export class RealScanService {
       // Tauriバックエンドでスキャン開始（完了を待つ）
       const result = await TauriService.scanDirectory(targetFolder);
 
-      console.log('Scan completed:', result);
+      console.log("Scan completed:", result);
 
       // 完了時に状態更新
       this.currentSession.status = SCAN_STATUS.COMPLETED;
@@ -57,9 +57,9 @@ export class RealScanService {
 
       return this.currentSession;
     } catch (error) {
-      console.error('Start scan error:', error);
+      console.error("Start scan error:", error);
       throw new Error(
-        error instanceof Error ? error.message : 'Failed to start scan'
+        error instanceof Error ? error.message : "Failed to start scan",
       );
     }
   }
@@ -77,7 +77,7 @@ export class RealScanService {
    * Phase 2: バックエンドAPI実装後に統合
    */
   async stopScan(): Promise<void> {
-    console.warn('Stop scan not yet implemented (Phase 2)');
+    console.warn("Stop scan not yet implemented (Phase 2)");
     if (this.currentSession) {
       this.currentSession.status = SCAN_STATUS.PAUSED;
     }
@@ -101,9 +101,9 @@ export class RealScanService {
         lastScannedAt: new Date(),
       };
     } catch (error) {
-      console.error('Get statistics error:', error);
+      console.error("Get statistics error:", error);
       throw new Error(
-        error instanceof Error ? error.message : 'Failed to get statistics'
+        error instanceof Error ? error.message : "Failed to get statistics",
       );
     }
   }
@@ -113,7 +113,7 @@ export class RealScanService {
    * Phase 2: バックエンドAPI実装後に統合
    */
   async getDuplicates(): Promise<DuplicateFileGroup[]> {
-    console.warn('Get duplicates not yet implemented (Phase 2)');
+    console.warn("Get duplicates not yet implemented (Phase 2)");
     return [];
   }
 
@@ -122,10 +122,10 @@ export class RealScanService {
    * Phase 2: バックエンドAPI実装後に統合
    */
   async cleanup(): Promise<DatabaseOperationResult> {
-    console.warn('Cleanup not yet implemented (Phase 2)');
+    console.warn("Cleanup not yet implemented (Phase 2)");
     return {
       success: false,
-      message: 'Cleanup feature not yet implemented (Phase 2)',
+      message: "Cleanup feature not yet implemented (Phase 2)",
     };
   }
 
@@ -134,10 +134,10 @@ export class RealScanService {
    * Phase 2: バックエンドAPI実装後に統合
    */
   async rebuild(): Promise<DatabaseOperationResult> {
-    console.warn('Rebuild not yet implemented (Phase 2)');
+    console.warn("Rebuild not yet implemented (Phase 2)");
     return {
       success: false,
-      message: 'Rebuild feature not yet implemented (Phase 2)',
+      message: "Rebuild feature not yet implemented (Phase 2)",
     };
   }
 

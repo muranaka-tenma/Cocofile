@@ -1,15 +1,15 @@
 // CocoFile - Search State Store (Zustand)
 // Manages the state for the main search screen
 
-import { create } from 'zustand';
+import { create } from "zustand";
 import type {
   SearchResult,
   SearchFilters,
   TabType,
   FileType,
   DateRangeFilter,
-} from '@/types';
-import { TAB_TYPES } from '@/types';
+} from "@/types";
+import { TAB_TYPES } from "@/types";
 
 interface SearchState {
   // Search state
@@ -46,7 +46,7 @@ const initialFilters: SearchFilters = {
 
 export const useSearchStore = create<SearchState>((set, get) => ({
   // Initial state
-  keyword: '',
+  keyword: "",
   filters: initialFilters,
   activeTab: TAB_TYPES.SEARCH_RESULTS,
   searchResults: [],
