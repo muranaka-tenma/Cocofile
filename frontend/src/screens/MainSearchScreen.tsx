@@ -193,7 +193,7 @@ export const MainSearchScreen: React.FC = () => {
         {/* Tabs */}
         <Tabs
           value={activeTab}
-          onValueChange={(val) => setActiveTab(val as any)}
+          onValueChange={(val) => setActiveTab(val as TabType)}
         >
           <TabsList className="w-full justify-start mb-4">
             <TabsTrigger value={TAB_TYPES.SEARCH_RESULTS}>検索結果</TabsTrigger>
@@ -274,12 +274,14 @@ export const MainSearchScreen: React.FC = () => {
 
 // Result List Component
 interface ResultListProps {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   results: any[];
   isSearching: boolean;
   error: string | null;
   onToggleFavorite: (filePath: string) => void;
   onOpenFile: (filePath: string) => void;
   onOpenFileLocation: (filePath: string) => void;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onShowDetail: (metadata: any) => void;
   formatFileSize: (bytes: number) => string;
   formatRelativeTime: (date: Date) => string;
