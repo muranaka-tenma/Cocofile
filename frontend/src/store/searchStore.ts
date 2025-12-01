@@ -24,6 +24,23 @@ export const SORT_OPTIONS = {
 
 export type SortOption = (typeof SORT_OPTIONS)[keyof typeof SORT_OPTIONS];
 
+export const SEARCH_FIELDS = {
+  ALL: "all",
+  FILE_NAME: "fileName",
+  CONTENT: "content",
+  TAGS: "tags",
+  MEMO: "memo",
+} as const;
+
+export type SearchField =
+  (typeof SEARCH_FIELDS)[keyof typeof SEARCH_FIELDS];
+
+export interface SearchHistoryItem {
+  keyword: string;
+  field: SearchField;
+  timestamp: Date;
+}
+
 interface SearchState {
   // Search state
   keyword: string;
@@ -33,6 +50,7 @@ interface SearchState {
   searchResults: SearchResult[];
   isSearching: boolean;
   error: string | null;
+  searchHistory: SearchHistoryItem[];
 
   // Actions
   setKeyword: (keyword: string) => void;
@@ -48,6 +66,11 @@ interface SearchState {
   toggleFileType: (fileType: FileType) => void;
   setDateRange: (dateRange: DateRangeFilter) => void;
   clearFilters: () => void;
+
+  // Search history actions
+  addSearchHistory: (item: SearchHistoryItem) => void;
+  removeSearchHistory: (index: number) => void;
+  clearSearchHistory: () => void;
 
   // Computed
   hasActiveFilters: () => boolean;
@@ -68,6 +91,7 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   searchResults: [],
   isSearching: false,
   error: null,
+  searchHistory: [],
 
   // Basic actions
   setKeyword: (keyword) => set({ keyword }),
@@ -119,6 +143,31 @@ export const useSearchStore = create<SearchState>((set, get) => ({
     set({
       filters: initialFilters,
     }),
+
+  // Search history actions
+  addSearchHistory: (item) =>
+    set((state) => {
+      // Don't add duplicates - check if the same keyword already exists
+      const isDuplicate = state.searchHistory.some(
+        (h) => h.keyword === item.keyword && h.field === item.field,
+      );
+
+      if (isDuplicate) {
+        return state;
+      }
+
+      // Add to the beginning and keep only last 50 items
+      return {
+        searchHistory: [item, ...state.searchHistory].slice(0, 50),
+      };
+    }),
+
+  removeSearchHistory: (index) =>
+    set((state) => ({
+      searchHistory: state.searchHistory.filter((_, i) => i !== index),
+    })),
+
+  clearSearchHistory: () => set({ searchHistory: [] }),
 
   // Computed
   hasActiveFilters: () => {

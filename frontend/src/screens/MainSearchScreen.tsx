@@ -35,10 +35,12 @@ import { FileDetailModal } from "@/components/FileDetailModal";
 import { TagBadge } from "@/components/TagBadge";
 import { TagFilterDialog } from "@/components/TagFilterDialog";
 import { DateRangeFilterDialog } from "@/components/DateRangeFilterDialog";
+import { AdvancedSearchDialog } from "@/components/AdvancedSearchDialog";
 
 export const MainSearchScreen: React.FC = () => {
   const [tagFilterOpen, setTagFilterOpen] = React.useState(false);
   const [dateFilterOpen, setDateFilterOpen] = React.useState(false);
+  const [advancedSearchOpen, setAdvancedSearchOpen] = React.useState(false);
 
   const {
     keyword,
@@ -99,15 +101,25 @@ export const MainSearchScreen: React.FC = () => {
 
         {/* Search Box */}
         <div className="mb-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <Input
-              type="text"
-              placeholder="ファイルを検索 (例: 先週のABC社の見積もり)"
-              value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Input
+                type="text"
+                placeholder="ファイルを検索 (例: 先週のABC社の見積もり)"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Button
+              variant="outline"
+              onClick={() => setAdvancedSearchOpen(true)}
+              className="gap-2"
+            >
+              <Search className="h-4 w-4" />
+              詳細検索
+            </Button>
           </div>
         </div>
 
@@ -315,6 +327,11 @@ export const MainSearchScreen: React.FC = () => {
           onOpenChange={setDateFilterOpen}
           dateRange={filters.dateRange}
           onDateRangeChange={(dateRange) => setDateRange(dateRange)}
+        />
+
+        <AdvancedSearchDialog
+          open={advancedSearchOpen}
+          onOpenChange={setAdvancedSearchOpen}
         />
       </div>
     </div>
