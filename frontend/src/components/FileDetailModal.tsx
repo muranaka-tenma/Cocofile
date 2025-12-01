@@ -22,7 +22,6 @@ import {
   ExternalLink,
   Tag,
   Edit,
-  X,
   Plus,
   Info,
 } from "lucide-react";
