@@ -24,8 +24,13 @@ import { useFileDetailStore } from "@/store/fileDetailStore";
 import { TAB_TYPES, FILE_TYPES } from "@/types";
 import { FileDetailModal } from "@/components/FileDetailModal";
 import { TagBadge } from "@/components/TagBadge";
+import { TagFilterDialog } from "@/components/TagFilterDialog";
+import { DateRangeFilterDialog } from "@/components/DateRangeFilterDialog";
 
 export const MainSearchScreen: React.FC = () => {
+  const [tagFilterOpen, setTagFilterOpen] = React.useState(false);
+  const [dateFilterOpen, setDateFilterOpen] = React.useState(false);
+
   const {
     keyword,
     filters,
@@ -33,6 +38,8 @@ export const MainSearchScreen: React.FC = () => {
     setKeyword,
     toggleFileType,
     setActiveTab,
+    setFilters,
+    setDateRange,
   } = useSearchStore();
 
   const {
@@ -92,14 +99,33 @@ export const MainSearchScreen: React.FC = () => {
 
         {/* Filters */}
         <div className="flex gap-2 mb-4 flex-wrap">
-          {/* Tag Filter Button (placeholder) */}
-          <Button variant="outline" size="sm" className="gap-1">
+          {/* Tag Filter Button */}
+          <Button
+            variant={filters.tags.length > 0 ? "default" : "outline"}
+            size="sm"
+            className="gap-1"
+            onClick={() => setTagFilterOpen(true)}
+          >
             <Tag className="h-4 w-4" />
             タグ
+            {filters.tags.length > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 text-xs bg-white/20 rounded-full">
+                {filters.tags.length}
+              </span>
+            )}
           </Button>
 
-          {/* Date Range Filter Button (placeholder) */}
-          <Button variant="outline" size="sm" className="gap-1">
+          {/* Date Range Filter Button */}
+          <Button
+            variant={
+              filters.dateRange.startDate || filters.dateRange.endDate
+                ? "default"
+                : "outline"
+            }
+            size="sm"
+            className="gap-1"
+            onClick={() => setDateFilterOpen(true)}
+          >
             <Calendar className="h-4 w-4" />
             日付範囲
           </Button>
@@ -226,6 +252,21 @@ export const MainSearchScreen: React.FC = () => {
 
         {/* File Detail Modal */}
         <FileDetailModal onFileUpdated={refetch} />
+
+        {/* Filter Dialogs */}
+        <TagFilterDialog
+          open={tagFilterOpen}
+          onOpenChange={setTagFilterOpen}
+          selectedTags={filters.tags}
+          onTagsChange={(tags) => setFilters({ tags })}
+        />
+
+        <DateRangeFilterDialog
+          open={dateFilterOpen}
+          onOpenChange={setDateFilterOpen}
+          dateRange={filters.dateRange}
+          onDateRangeChange={(dateRange) => setDateRange(dateRange)}
+        />
       </div>
     </div>
   );
