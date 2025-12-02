@@ -18,6 +18,9 @@ import { TagBadge } from "@/components/TagBadge";
 import { useTagSuggestions } from "@/hooks/useTagSuggestions";
 import { PDFPreview } from "@/components/PDFPreview";
 import { ImagePreview } from "@/components/ImagePreview";
+import { ExcelPreview } from "@/components/ExcelPreview";
+import { WordPreview } from "@/components/WordPreview";
+import { PowerPointPreview } from "@/components/PowerPointPreview";
 import {
   FileText,
   Star,
@@ -203,20 +206,28 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
                 <PDFPreview filePath={fileMetadata.filePath} />
               ) : fileMetadata.fileType === "image" ? (
                 <ImagePreview filePath={fileMetadata.filePath} />
+              ) : fileMetadata.fileType === "excel" ? (
+                <ExcelPreview
+                  extractedText={fileMetadata.extractedText}
+                  fileName={fileMetadata.fileName}
+                />
+              ) : fileMetadata.fileType === "word" ? (
+                <WordPreview
+                  extractedText={fileMetadata.extractedText}
+                  fileName={fileMetadata.fileName}
+                />
+              ) : fileMetadata.fileType === "powerpoint" ? (
+                <PowerPointPreview
+                  extractedText={fileMetadata.extractedText}
+                  fileName={fileMetadata.fileName}
+                />
               ) : (
                 <div className="h-full flex items-center justify-center">
                   <div className="text-center text-muted-foreground">
                     <FileText className="h-16 w-16 mx-auto mb-3 opacity-20" />
                     <p>プレビュー未対応</p>
                     <p className="text-xs mt-1">
-                      {fileMetadata.fileType === "excel"
-                        ? "Excelファイル"
-                        : fileMetadata.fileType === "word"
-                          ? "Wordファイル"
-                          : fileMetadata.fileType === "powerpoint"
-                            ? "PowerPointファイル"
-                            : "このファイル形式"}
-                      のプレビューは準備中です
+                      このファイル形式のプレビューは準備中です
                     </p>
                   </div>
                 </div>
