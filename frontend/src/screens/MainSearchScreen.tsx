@@ -1,7 +1,7 @@
 // CocoFile - Main Search Screen (S-001)
 // Desktop window UI for file search with filters and tabs
 
-import React from "react";
+import React, { useRef, useState } from "react";
 import {
   Search,
   Tag,
@@ -30,6 +30,7 @@ import { useSearchStore, SORT_OPTIONS } from "@/store/searchStore";
 import { useSearchData } from "@/hooks/useSearchData";
 import { useFileDetailStore } from "@/store/fileDetailStore";
 import { useSortedResults } from "@/hooks/useSortedResults";
+import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { TAB_TYPES, FILE_TYPES } from "@/types";
 import { FileDetailModal } from "@/components/FileDetailModal";
 import { TagBadge } from "@/components/TagBadge";
@@ -39,9 +40,11 @@ import { AdvancedSearchDialog } from "@/components/AdvancedSearchDialog";
 import { VirtualizedResultList } from "@/components/VirtualizedResultList";
 
 export const MainSearchScreen: React.FC = () => {
-  const [tagFilterOpen, setTagFilterOpen] = React.useState(false);
-  const [dateFilterOpen, setDateFilterOpen] = React.useState(false);
-  const [advancedSearchOpen, setAdvancedSearchOpen] = React.useState(false);
+  const [tagFilterOpen, setTagFilterOpen] = useState(false);
+  const [dateFilterOpen, setDateFilterOpen] = useState(false);
+  const [advancedSearchOpen, setAdvancedSearchOpen] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState<number>(0);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const {
     keyword,
@@ -73,6 +76,35 @@ export const MainSearchScreen: React.FC = () => {
   // Sort results
   const sortedResults = useSortedResults(searchResults, sortBy);
 
+  // Reset selected index when results change
+  React.useEffect(() => {
+    setSelectedIndex(0);
+  }, [sortedResults]);
+
+  // Keyboard shortcuts
+  useKeyboardShortcuts({
+    searchInputRef,
+    onArrowUp: () => {
+      setSelectedIndex((prev) => Math.max(0, prev - 1));
+    },
+    onArrowDown: () => {
+      setSelectedIndex((prev) => Math.min(sortedResults.length - 1, prev + 1));
+    },
+    onEnter: () => {
+      if (sortedResults[selectedIndex]) {
+        openModal(sortedResults[selectedIndex].metadata);
+      }
+    },
+    onCtrlEnter: () => {
+      if (sortedResults[selectedIndex]) {
+        openFile(sortedResults[selectedIndex].filePath);
+      }
+    },
+    onEscape: () => {
+      setSelectedIndex(0);
+    },
+  });
+
   // File type icon mapping
   const getFileIcon = (fileType: string) => {
     switch (fileType) {
@@ -95,8 +127,16 @@ export const MainSearchScreen: React.FC = () => {
         {/* Header with Hotkey Hint */}
         <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
           <h1 className="text-lg font-medium text-blue-600">CocoFile</h1>
-          <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
-            Ctrl+Shift+F で呼び出し
+          <div className="flex gap-2">
+            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              Ctrl+K: 検索
+            </div>
+            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              ↑↓: 選択
+            </div>
+            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+              Enter: 詳細
+            </div>
           </div>
         </div>
 
@@ -106,6 +146,7 @@ export const MainSearchScreen: React.FC = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
               <Input
+                ref={searchInputRef}
                 type="text"
                 placeholder="ファイルを検索 (例: 先週のABC社の見積もり)"
                 value={keyword}
@@ -276,6 +317,7 @@ export const MainSearchScreen: React.FC = () => {
               formatFileSize={formatFileSize}
               formatRelativeTime={formatRelativeTime}
               getFileIcon={getFileIcon}
+              selectedIndex={selectedIndex}
             />
           </TabsContent>
 
@@ -292,6 +334,7 @@ export const MainSearchScreen: React.FC = () => {
               formatFileSize={formatFileSize}
               formatRelativeTime={formatRelativeTime}
               getFileIcon={getFileIcon}
+              selectedIndex={selectedIndex}
             />
           </TabsContent>
 
@@ -308,6 +351,7 @@ export const MainSearchScreen: React.FC = () => {
               formatFileSize={formatFileSize}
               formatRelativeTime={formatRelativeTime}
               getFileIcon={getFileIcon}
+              selectedIndex={selectedIndex}
             />
           </TabsContent>
         </Tabs>
@@ -353,6 +397,7 @@ interface ResultListProps {
   formatFileSize: (bytes: number) => string;
   formatRelativeTime: (date: Date) => string;
   getFileIcon: (fileType: string) => React.JSX.Element;
+  selectedIndex?: number;
 }
 
 const ResultList: React.FC<ResultListProps> = ({
@@ -365,6 +410,7 @@ const ResultList: React.FC<ResultListProps> = ({
   formatFileSize,
   formatRelativeTime,
   getFileIcon,
+  selectedIndex = -1,
 }) => {
   // Loading state
   if (isSearching) {
@@ -414,10 +460,14 @@ const ResultList: React.FC<ResultListProps> = ({
   // Normal list for smaller result sets
   return (
     <div className="flex flex-col gap-3">
-      {results.map((result) => (
+      {results.map((result, index) => (
         <div
           key={result.filePath}
-          className="flex gap-3 p-3 border border-gray-200 rounded-lg hover:bg-gray-50 hover:border-blue-600 transition-all cursor-pointer"
+          className={`flex gap-3 p-3 border rounded-lg hover:bg-gray-50 hover:border-blue-600 transition-all cursor-pointer ${
+            index === selectedIndex
+              ? "bg-blue-50 border-blue-500"
+              : "border-gray-200"
+          }`}
           onClick={() => onShowDetail(result.metadata)}
         >
           {/* Thumbnail */}
