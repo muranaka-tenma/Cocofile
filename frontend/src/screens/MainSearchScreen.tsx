@@ -19,6 +19,8 @@ import {
   Square,
   Trash2,
   X,
+  Download,
+  Copy,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -44,6 +46,11 @@ import { AdvancedSearchDialog } from "@/components/AdvancedSearchDialog";
 import { VirtualizedResultList } from "@/components/VirtualizedResultList";
 import { RealFileService } from "@/services/RealFileService";
 import { BatchTagDialog } from "@/components/BatchTagDialog";
+import {
+  exportToCSV,
+  exportToJSON,
+  copyToClipboard,
+} from "@/utils/exportUtils";
 
 const fileService = new RealFileService();
 
@@ -326,7 +333,7 @@ export const MainSearchScreen: React.FC = () => {
         )}
 
         {/* Sort and Filters */}
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-4 flex-wrap">
           {/* Sort Dropdown */}
           <div className="flex items-center gap-2">
             <ArrowUpDown className="h-4 w-4 text-gray-500" />
@@ -359,7 +366,47 @@ export const MainSearchScreen: React.FC = () => {
             </Select>
           </div>
 
-          {/* Filter Buttons */}
+          {/* Export Buttons */}
+          {sortedResults.length > 0 && (
+            <div className="flex items-center gap-2 ml-auto">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => copyToClipboard(sortedResults)}
+                className="gap-1"
+                title="結果をクリップボードにコピー"
+              >
+                <Copy className="h-4 w-4" />
+                コピー
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportToCSV(sortedResults)}
+                className="gap-1"
+                title="CSV形式でエクスポート"
+              >
+                <Download className="h-4 w-4" />
+                CSV
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => exportToJSON(sortedResults)}
+                className="gap-1"
+                title="JSON形式でエクスポート"
+              >
+                <Download className="h-4 w-4" />
+                JSON
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Filters Row */}
+        <div className="flex items-center gap-4 mb-4">
+          <span className="text-sm text-gray-600 font-medium">フィルター:</span>
+
           <div className="flex gap-2 flex-wrap">
             {/* Tag Filter Button */}
             <Button
