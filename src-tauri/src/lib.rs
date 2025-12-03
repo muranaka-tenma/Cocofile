@@ -3,6 +3,7 @@ mod favorite_manager;
 pub mod file_scanner; // Public for testing
 mod file_watcher;
 mod logger;
+mod memo_manager;
 mod organization_manager;
 mod python_bridge;
 mod settings_manager;
@@ -227,6 +228,20 @@ fn record_file_access(app: tauri::AppHandle, file_path: String) -> Result<(), St
     favorite_manager::record_file_access(&app, file_path)
 }
 
+// ========== メモ管理API ==========
+
+/// ファイルのメモを更新
+#[tauri::command]
+fn update_memo(app: tauri::AppHandle, file_path: String, memo: String) -> Result<(), String> {
+    memo_manager::update_memo(&app, file_path, memo)
+}
+
+/// ファイルのメモを取得
+#[tauri::command]
+fn get_memo(app: tauri::AppHandle, file_path: String) -> Result<Option<String>, String> {
+    memo_manager::get_memo(&app, file_path)
+}
+
 // ========== 設定管理API ==========
 
 /// 設定を取得
@@ -313,6 +328,8 @@ pub fn run() {
             get_favorites,
             get_recent_files,
             record_file_access,
+            update_memo,
+            get_memo,
             get_settings,
             save_settings,
             add_watched_folder,
