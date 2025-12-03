@@ -51,6 +51,8 @@ import {
   exportToJSON,
   copyToClipboard,
 } from "@/utils/exportUtils";
+import { useSearchHistory } from "@/hooks/useSearchHistory";
+import { SearchHistoryDropdown } from "@/components/SearchHistoryDropdown";
 
 const fileService = new RealFileService();
 
@@ -63,7 +65,16 @@ export const MainSearchScreen: React.FC = () => {
   const [batchMode, setBatchMode] = useState(false);
   const [batchTagDialogOpen, setBatchTagDialogOpen] = useState(false);
   const [batchTagMode, setBatchTagMode] = useState<"add" | "remove">("add");
+  const [showSearchHistory, setShowSearchHistory] = useState(false);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  // Search history
+  const {
+    addSearch,
+    removeSearch: removeSearchHistory,
+    clearHistory: clearSearchHistory,
+    getRecentSearches,
+  } = useSearchHistory();
 
   const {
     keyword,
@@ -100,6 +111,14 @@ export const MainSearchScreen: React.FC = () => {
     setSelectedIndex(0);
     setSelectedFiles(new Set());
   }, [sortedResults]);
+
+  // Add search to history when search completes
+  React.useEffect(() => {
+    if (keyword && !isSearching && searchResults.length >= 0) {
+      addSearch(keyword, searchResults.length);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [keyword, isSearching, searchResults.length]);
 
   // Batch operation helpers
   const toggleFileSelection = (filePath: string) => {
@@ -247,14 +266,28 @@ export const MainSearchScreen: React.FC = () => {
         <div className="mb-4">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 z-10" />
               <Input
                 ref={searchInputRef}
                 type="text"
                 placeholder="ファイルを検索 (例: 先週のABC社の見積もり)"
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
+                onFocus={() => setShowSearchHistory(true)}
+                onBlur={() =>
+                  setTimeout(() => setShowSearchHistory(false), 200)
+                }
                 className="pl-10"
+              />
+              <SearchHistoryDropdown
+                history={getRecentSearches(10)}
+                onSelectSearch={(selectedKeyword) => {
+                  setKeyword(selectedKeyword);
+                  setShowSearchHistory(false);
+                }}
+                onRemoveSearch={removeSearchHistory}
+                onClearHistory={clearSearchHistory}
+                show={showSearchHistory}
               />
             </div>
             <Button
@@ -500,13 +533,28 @@ export const MainSearchScreen: React.FC = () => {
           </div>
         </div>
 
+        {/* Results Info */}
+        {!isSearching && sortedResults.length > 0 && (
+          <div className="mb-4 text-sm text-gray-600">
+            <span className="font-medium">{sortedResults.length}件</span>
+            の結果が見つかりました
+          </div>
+        )}
+
         {/* Tabs */}
         <Tabs
           value={activeTab}
           onValueChange={(val) => setActiveTab(val as TabType)}
         >
           <TabsList className="w-full justify-start mb-4">
-            <TabsTrigger value={TAB_TYPES.SEARCH_RESULTS}>検索結果</TabsTrigger>
+            <TabsTrigger value={TAB_TYPES.SEARCH_RESULTS}>
+              検索結果
+              {sortedResults.length > 0 && (
+                <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                  {sortedResults.length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value={TAB_TYPES.FAVORITES}>お気に入り</TabsTrigger>
             <TabsTrigger value={TAB_TYPES.RECENT}>最近使用</TabsTrigger>
           </TabsList>
