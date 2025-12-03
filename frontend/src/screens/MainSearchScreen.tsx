@@ -43,6 +43,7 @@ import { DateRangeFilterDialog } from "@/components/DateRangeFilterDialog";
 import { AdvancedSearchDialog } from "@/components/AdvancedSearchDialog";
 import { VirtualizedResultList } from "@/components/VirtualizedResultList";
 import { RealFileService } from "@/services/RealFileService";
+import { BatchTagDialog } from "@/components/BatchTagDialog";
 
 const fileService = new RealFileService();
 
@@ -53,6 +54,8 @@ export const MainSearchScreen: React.FC = () => {
   const [selectedIndex, setSelectedIndex] = useState<number>(0);
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
   const [batchMode, setBatchMode] = useState(false);
+  const [batchTagDialogOpen, setBatchTagDialogOpen] = useState(false);
+  const [batchTagMode, setBatchTagMode] = useState<"add" | "remove">("add");
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   const {
@@ -160,6 +163,18 @@ export const MainSearchScreen: React.FC = () => {
     }
     refetch();
     clearSelection();
+  };
+
+  // Get all tags from selected files (for the dialog)
+  const getSelectedFilesTags = (): string[] => {
+    const allTags = new Set<string>();
+    selectedFiles.forEach((filePath) => {
+      const result = sortedResults.find((r) => r.filePath === filePath);
+      if (result && result.metadata.tags) {
+        result.metadata.tags.forEach((tag: string) => allTags.add(tag));
+      }
+    });
+    return Array.from(allTags);
   };
 
   // Keyboard shortcuts
@@ -287,8 +302,8 @@ export const MainSearchScreen: React.FC = () => {
                   size="sm"
                   variant="default"
                   onClick={() => {
-                    const tag = prompt("追加するタグ名を入力してください");
-                    if (tag) handleBulkAddTag(tag.trim());
+                    setBatchTagMode("add");
+                    setBatchTagDialogOpen(true);
                   }}
                 >
                   <Tag className="h-4 w-4 mr-1" />
@@ -298,8 +313,8 @@ export const MainSearchScreen: React.FC = () => {
                   size="sm"
                   variant="destructive"
                   onClick={() => {
-                    const tag = prompt("削除するタグ名を入力してください");
-                    if (tag) handleBulkRemoveTag(tag.trim());
+                    setBatchTagMode("remove");
+                    setBatchTagDialogOpen(true);
                   }}
                 >
                   <Trash2 className="h-4 w-4 mr-1" />
@@ -531,6 +546,16 @@ export const MainSearchScreen: React.FC = () => {
         <AdvancedSearchDialog
           open={advancedSearchOpen}
           onOpenChange={setAdvancedSearchOpen}
+        />
+
+        <BatchTagDialog
+          open={batchTagDialogOpen}
+          onOpenChange={setBatchTagDialogOpen}
+          mode={batchTagMode}
+          selectedCount={selectedFiles.size}
+          existingTags={getSelectedFilesTags()}
+          onAddTag={handleBulkAddTag}
+          onRemoveTag={handleBulkRemoveTag}
         />
       </div>
     </div>
