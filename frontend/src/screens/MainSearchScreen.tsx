@@ -55,6 +55,9 @@ import {
 } from "@/utils/exportUtils";
 import { useSearchHistory } from "@/hooks/useSearchHistory";
 import { SearchHistoryDropdown } from "@/components/SearchHistoryDropdown";
+import { FileIconWithBg } from "@/utils/fileIcons";
+import { SkeletonFileList } from "@/components/ui/skeleton";
+import { toast } from "@/store/toastStore";
 
 const fileService = new RealFileService();
 
@@ -232,19 +235,42 @@ export const MainSearchScreen: React.FC = () => {
     },
   });
 
-  // File type icon mapping
-  const getFileIcon = (fileType: string) => {
-    switch (fileType) {
-      case FILE_TYPES.PDF:
-        return <FileText className="h-8 w-8 text-gray-500" />;
-      case FILE_TYPES.EXCEL:
-        return <FileSpreadsheet className="h-8 w-8 text-gray-500" />;
-      case FILE_TYPES.WORD:
-        return <File className="h-8 w-8 text-gray-500" />;
-      case FILE_TYPES.POWERPOINT:
-        return <Presentation className="h-8 w-8 text-gray-500" />;
-      default:
-        return <File className="h-8 w-8 text-gray-500" />;
+  // Export handlers with toast notifications
+  const handleExport = async (format: "csv" | "json") => {
+    try {
+      const data = sortedResults.map((r) => ({
+        fileName: r.fileName,
+        filePath: r.filePath,
+        fileType: r.fileType,
+        score: r.score,
+        dateModified: r.metadata.dateModified,
+        size: r.metadata.size,
+        tags: r.metadata.tags?.join(", ") || "",
+      }));
+
+      if (format === "csv") {
+        await exportToCSV(data, "search-results.csv");
+        toast.success("エクスポート完了", "CSVファイルをダウンロードしました");
+      } else {
+        await exportToJSON(sortedResults, "search-results.json");
+        toast.success("エクスポート完了", "JSONファイルをダウンロードしました");
+      }
+    } catch (error) {
+      console.error("Export failed:", error);
+      toast.error("エクスポート失敗", "ファイルのエクスポートに失敗しました");
+    }
+  };
+
+  const handleCopyResults = async () => {
+    try {
+      const text = sortedResults
+        .map((r) => `${r.fileName} - ${r.filePath}`)
+        .join("\n");
+      await copyToClipboard(text);
+      toast.success("コピー完了", "検索結果をクリップボードにコピーしました");
+    } catch (error) {
+      console.error("Copy failed:", error);
+      toast.error("コピー失敗", "クリップボードへのコピーに失敗しました");
     }
   };
 
@@ -431,9 +457,10 @@ export const MainSearchScreen: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => copyToClipboard(sortedResults)}
+                onClick={handleCopyResults}
                 className="gap-1"
                 title="結果をクリップボードにコピー"
+                aria-label="検索結果をクリップボードにコピー"
               >
                 <Copy className="h-4 w-4" />
                 コピー
@@ -441,9 +468,10 @@ export const MainSearchScreen: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => exportToCSV(sortedResults)}
+                onClick={() => handleExport("csv")}
                 className="gap-1"
                 title="CSV形式でエクスポート"
+                aria-label="CSV形式でエクスポート"
               >
                 <Download className="h-4 w-4" />
                 CSV
@@ -451,9 +479,10 @@ export const MainSearchScreen: React.FC = () => {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => exportToJSON(sortedResults)}
+                onClick={() => handleExport("json")}
                 className="gap-1"
                 title="JSON形式でエクスポート"
+                aria-label="JSON形式でエクスポート"
               >
                 <Download className="h-4 w-4" />
                 JSON
@@ -696,191 +725,207 @@ interface ResultListProps {
   onShowDetail: (metadata: any) => void;
   formatFileSize: (bytes: number) => string;
   formatRelativeTime: (date: Date) => string;
-  getFileIcon: (fileType: string) => React.JSX.Element;
   selectedIndex?: number;
   batchMode?: boolean;
   selectedFiles?: Set<string>;
   onToggleSelection?: (filePath: string) => void;
 }
 
-const ResultList: React.FC<ResultListProps> = ({
-  results,
-  isSearching,
-  error,
-  onToggleFavorite,
-  onOpenFileLocation,
-  onShowDetail,
-  formatFileSize,
-  formatRelativeTime,
-  getFileIcon,
-  selectedIndex = -1,
-  batchMode = false,
-  selectedFiles = new Set(),
-  onToggleSelection,
-}) => {
-  // Loading state
-  if (isSearching) {
+const ResultList: React.FC<ResultListProps> = React.memo(
+  ({
+    results,
+    isSearching,
+    error,
+    onToggleFavorite,
+    onOpenFileLocation,
+    onShowDetail,
+    formatFileSize,
+    formatRelativeTime,
+    selectedIndex = -1,
+    batchMode = false,
+    selectedFiles = new Set(),
+    onToggleSelection,
+  }) => {
+    // Loading state
+    if (isSearching) {
+      return (
+        <div className="space-y-4 animate-fade-in">
+          <div className="flex items-center justify-center py-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary mr-2" />
+            <p className="text-sm text-muted-foreground">検索中...</p>
+          </div>
+          <SkeletonFileList count={5} />
+        </div>
+      );
+    }
+
+    // Error state
+    if (error) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12">
+          <SearchX className="h-12 w-12 text-red-400 mb-4" />
+          <p className="text-red-600">{error}</p>
+        </div>
+      );
+    }
+
+    // Empty state
+    if (results.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-12">
+          <SearchX className="h-16 w-16 text-gray-300 mb-4" />
+          <p className="text-gray-500">検索結果が見つかりませんでした</p>
+        </div>
+      );
+    }
+
+    // Use virtualized list for large result sets (50+ items)
+    if (results.length > 50) {
+      return (
+        <VirtualizedResultList
+          results={results}
+          onToggleFavorite={onToggleFavorite}
+          onOpenFileLocation={onOpenFileLocation}
+          onShowDetail={onShowDetail}
+          formatFileSize={formatFileSize}
+          formatRelativeTime={formatRelativeTime}
+        />
+      );
+    }
+
+    // Normal list for smaller result sets
     return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <Loader2 className="h-12 w-12 animate-spin text-blue-600 mb-4" />
-        <p className="text-gray-500">検索中...</p>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <SearchX className="h-12 w-12 text-red-400 mb-4" />
-        <p className="text-red-600">{error}</p>
-      </div>
-    );
-  }
-
-  // Empty state
-  if (results.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12">
-        <SearchX className="h-16 w-16 text-gray-300 mb-4" />
-        <p className="text-gray-500">検索結果が見つかりませんでした</p>
-      </div>
-    );
-  }
-
-  // Use virtualized list for large result sets (50+ items)
-  if (results.length > 50) {
-    return (
-      <VirtualizedResultList
-        results={results}
-        onToggleFavorite={onToggleFavorite}
-        onOpenFileLocation={onOpenFileLocation}
-        onShowDetail={onShowDetail}
-        formatFileSize={formatFileSize}
-        formatRelativeTime={formatRelativeTime}
-        getFileIcon={getFileIcon}
-      />
-    );
-  }
-
-  // Normal list for smaller result sets
-  return (
-    <div className="flex flex-col gap-3">
-      {results.map((result, index) => {
-        const isSelected = selectedFiles.has(result.filePath);
-        return (
-          <div
-            key={result.filePath}
-            className={`flex gap-3 p-3 border rounded-lg hover:bg-gray-50 hover:border-blue-600 transition-all cursor-pointer ${
-              index === selectedIndex
-                ? "bg-blue-50 border-blue-500"
-                : isSelected
-                  ? "bg-blue-100 border-blue-400"
-                  : "border-gray-200"
-            }`}
-            onClick={() => {
-              if (batchMode && onToggleSelection) {
-                onToggleSelection(result.filePath);
-              } else {
-                onShowDetail(result.metadata);
-              }
-            }}
-          >
-            {/* Checkbox (Batch Mode) */}
-            {batchMode && (
-              <div className="flex items-start pt-1 flex-shrink-0">
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (onToggleSelection) {
-                      onToggleSelection(result.filePath);
-                    }
-                  }}
-                  className="p-1"
-                >
-                  {isSelected ? (
-                    <CheckSquare className="h-5 w-5 text-blue-600" />
-                  ) : (
-                    <Square className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            )}
-
-            {/* Thumbnail */}
-            <div className="w-15 h-15 bg-gray-100 rounded flex items-center justify-center flex-shrink-0">
-              {getFileIcon(result.fileType)}
-            </div>
-
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              {/* Header: Filename + Favorite */}
-              <div className="flex items-start justify-between mb-1">
-                <h3 className="text-sm font-medium text-gray-900 truncate">
-                  {result.fileName}
-                </h3>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onToggleFavorite(result.filePath);
-                  }}
-                  className="flex-shrink-0 ml-2"
-                >
-                  <Star
-                    className={`h-5 w-5 ${
-                      result.metadata.isFavorite
-                        ? "fill-yellow-400 text-yellow-400"
-                        : "text-gray-300"
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {/* Path */}
-              <p className="text-xs text-gray-500 truncate mb-2">
-                {result.filePath}
-              </p>
-
-              {/* Tags */}
-              {result.metadata.tags && result.metadata.tags.length > 0 && (
-                <div className="flex gap-1 flex-wrap mb-2">
-                  {result.metadata.tags.map((tag: string) => (
-                    <TagBadge key={tag} tagName={tag} size="sm" />
-                  ))}
+      <div className="flex flex-col gap-3">
+        {results.map((result, index) => {
+          const isSelected = selectedFiles.has(result.filePath);
+          return (
+            <div
+              key={result.filePath}
+              className={`flex gap-3 p-3 border rounded-lg transition-all duration-200 cursor-pointer hover:shadow-md animate-fade-in ${
+                index === selectedIndex
+                  ? "bg-accent border-primary shadow-sm"
+                  : isSelected
+                    ? "bg-primary/10 border-primary/50"
+                    : "border-border hover:bg-accent/50 hover:border-primary/30"
+              }`}
+              onClick={() => {
+                if (batchMode && onToggleSelection) {
+                  onToggleSelection(result.filePath);
+                } else {
+                  onShowDetail(result.metadata);
+                }
+              }}
+              role="button"
+              tabIndex={0}
+              aria-label={`${result.fileName} を開く`}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  if (batchMode && onToggleSelection) {
+                    onToggleSelection(result.filePath);
+                  } else {
+                    onShowDetail(result.metadata);
+                  }
+                }
+              }}
+            >
+              {/* Checkbox (Batch Mode) */}
+              {batchMode && (
+                <div className="flex items-start pt-1 flex-shrink-0">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (onToggleSelection) {
+                        onToggleSelection(result.filePath);
+                      }
+                    }}
+                    className="p-1 rounded hover:bg-background/50 transition-colors"
+                    aria-label={isSelected ? "選択を解除" : "選択"}
+                  >
+                    {isSelected ? (
+                      <CheckSquare className="h-5 w-5 text-primary" />
+                    ) : (
+                      <Square className="h-5 w-5 text-muted-foreground" />
+                    )}
+                  </button>
                 </div>
               )}
 
-              {/* Meta info */}
-              <div className="flex gap-3 text-xs text-gray-400">
-                <span>{formatFileSize(result.fileSize)}</span>
-                <span>
-                  {result.metadata.createdAt.toLocaleDateString("ja-JP")}
-                </span>
-                <span>
-                  最終アクセス: {formatRelativeTime(result.lastAccessedAt)}
-                </span>
+              {/* Thumbnail */}
+              <FileIconWithBg filename={result.fileName} />
+
+              {/* Content */}
+              <div className="flex-1 min-w-0">
+                {/* Header: Filename + Favorite */}
+                <div className="flex items-start justify-between mb-1">
+                  <h3 className="text-sm font-medium text-gray-900 truncate">
+                    {result.fileName}
+                  </h3>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onToggleFavorite(result.filePath);
+                    }}
+                    className="flex-shrink-0 ml-2"
+                  >
+                    <Star
+                      className={`h-5 w-5 ${
+                        result.metadata.isFavorite
+                          ? "fill-yellow-400 text-yellow-400"
+                          : "text-gray-300"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Path */}
+                <p className="text-xs text-gray-500 truncate mb-2">
+                  {result.filePath}
+                </p>
+
+                {/* Tags */}
+                {result.metadata.tags && result.metadata.tags.length > 0 && (
+                  <div className="flex gap-1 flex-wrap mb-2">
+                    {result.metadata.tags.map((tag: string) => (
+                      <TagBadge key={tag} tagName={tag} size="sm" />
+                    ))}
+                  </div>
+                )}
+
+                {/* Meta info */}
+                <div className="flex gap-3 text-xs text-gray-400">
+                  <span>{formatFileSize(result.fileSize)}</span>
+                  <span>
+                    {result.metadata.createdAt.toLocaleDateString("ja-JP")}
+                  </span>
+                  <span>
+                    最終アクセス: {formatRelativeTime(result.lastAccessedAt)}
+                  </span>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex flex-col gap-1 flex-shrink-0">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenFileLocation(result.filePath);
+                  }}
+                  title="フォルダを開く"
+                >
+                  <Folder className="h-4 w-4" />
+                </Button>
               </div>
             </div>
+          );
+        })}
+      </div>
+    );
+  },
+);
 
-            {/* Actions */}
-            <div className="flex flex-col gap-1 flex-shrink-0">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onOpenFileLocation(result.filePath);
-                }}
-                title="フォルダを開く"
-              >
-                <Folder className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+ResultList.displayName = "ResultList";
 
 export default MainSearchScreen;

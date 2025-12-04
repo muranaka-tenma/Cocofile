@@ -45,6 +45,7 @@ from analyzers.excel_analyzer import analyze_excel
 from analyzers.word_analyzer import analyze_word
 from analyzers.ppt_analyzer import analyze_ppt
 from analyzers.text_analyzer import analyze_text
+from analyzers.ocr_analyzer import analyze_image_ocr
 
 
 def send_response(status: str, data: Any = None, error: str = None):
@@ -125,6 +126,16 @@ def handle_command(command_data: Dict[str, Any]):
             return
 
         result = analyze_text(file_path)
+        send_response("success", result)
+
+    elif command == "analyze_image_ocr":
+        # 画像OCR分析 (.png, .jpg, .jpeg, .gif, .bmp, .tiff)
+        file_path = command_data.get("path")
+        if not file_path:
+            send_response("error", error="Missing 'path' parameter")
+            return
+
+        result = analyze_image_ocr(file_path)
         send_response("success", result)
 
     else:

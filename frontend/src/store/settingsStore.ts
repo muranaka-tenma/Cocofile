@@ -15,12 +15,15 @@ function convertFromTauri(tauri: TauriAppSettings): AppSettings {
     excludedFolders: tauri.excluded_folders,
     excludedExtensions: tauri.excluded_extensions,
     scanTiming: tauri.scan_timing as ScanTimingType,
+    ocrEnabled: tauri.ocr_enabled ?? true,
     hotkey: tauri.hotkey,
     windowPosition: tauri.window_position,
     autoHide: tauri.auto_hide,
     theme: (tauri.theme as "light" | "dark") || "light",
     defaultTags: tauri.default_tags,
     tagColors: {},
+    aiEnabled: tauri.ai_enabled ?? true,
+    ollamaModel: tauri.ollama_model || "llama3.2",
     lastUpdatedAt: new Date(),
   };
 }
@@ -34,11 +37,14 @@ function convertToTauri(settings: AppSettings): TauriAppSettings {
     excluded_folders: settings.excludedFolders,
     excluded_extensions: settings.excludedExtensions,
     scan_timing: settings.scanTiming,
+    ocr_enabled: settings.ocrEnabled,
     hotkey: settings.hotkey,
     window_position: settings.windowPosition,
     auto_hide: settings.autoHide,
     theme: settings.theme,
     default_tags: settings.defaultTags,
+    ai_enabled: settings.aiEnabled,
+    ollama_model: settings.ollamaModel,
   };
 }
 
@@ -52,6 +58,9 @@ interface SettingsState {
   loadSettings: () => Promise<void>;
   updateScanTiming: (timing: ScanTimingType) => Promise<void>;
   updateAutoHide: (autoHide: boolean) => Promise<void>;
+  updateOcrEnabled: (enabled: boolean) => Promise<void>;
+  updateAiEnabled: (enabled: boolean) => Promise<void>;
+  updateOllamaModel: (model: string) => Promise<void>;
   addWatchedFolder: (folderPath: string) => Promise<void>;
   removeWatchedFolder: (folderPath: string) => Promise<void>;
   addExcludedFolder: (folderPath: string) => Promise<void>;
@@ -102,6 +111,45 @@ export const useSettingsStore = create<SettingsState>((set, get) => ({
       const currentSettings = get().settings;
       if (currentSettings) {
         const updatedSettings = { ...currentSettings, autoHide };
+        await TauriService.saveSettings(convertToTauri(updatedSettings));
+        set({ settings: updatedSettings });
+      }
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+
+  updateOcrEnabled: async (enabled: boolean) => {
+    try {
+      const currentSettings = get().settings;
+      if (currentSettings) {
+        const updatedSettings = { ...currentSettings, ocrEnabled: enabled };
+        await TauriService.saveSettings(convertToTauri(updatedSettings));
+        set({ settings: updatedSettings });
+      }
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+
+  updateAiEnabled: async (enabled: boolean) => {
+    try {
+      const currentSettings = get().settings;
+      if (currentSettings) {
+        const updatedSettings = { ...currentSettings, aiEnabled: enabled };
+        await TauriService.saveSettings(convertToTauri(updatedSettings));
+        set({ settings: updatedSettings });
+      }
+    } catch (error) {
+      set({ error: (error as Error).message });
+    }
+  },
+
+  updateOllamaModel: async (model: string) => {
+    try {
+      const currentSettings = get().settings;
+      if (currentSettings) {
+        const updatedSettings = { ...currentSettings, ollamaModel: model };
         await TauriService.saveSettings(convertToTauri(updatedSettings));
         set({ settings: updatedSettings });
       }

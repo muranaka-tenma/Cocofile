@@ -103,10 +103,10 @@ export const useSearchData = () => {
 
   // Auto-search when keyword, filters, or tab changes
   useEffect(() => {
-    // Debounce search for keyword input
+    // Debounce search for keyword input (150msに短縮してレスポンス向上)
     const timeoutId = setTimeout(() => {
       performSearch();
-    }, 300);
+    }, 150);
 
     return () => clearTimeout(timeoutId);
   }, [performSearch]);

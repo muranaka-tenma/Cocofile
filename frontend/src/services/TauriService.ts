@@ -400,6 +400,9 @@ export class TauriService {
         auto_hide: true,
         theme: "light",
         default_tags: ["work", "personal"],
+        ocr_enabled: true,
+        ai_enabled: true,
+        ollama_model: "llama3.2",
       };
     }
     return await invoke<TauriAppSettings>("get_settings");
@@ -522,6 +525,54 @@ export class TauriService {
     }
     return await invoke<boolean>("get_file_watcher_status");
   }
+
+  // ========== AI タグ提案API ==========
+
+  /**
+   * Ollamaの接続状態を確認
+   */
+  static async checkOllamaStatus(): Promise<OllamaStatus> {
+    if (!isTauriEnvironment()) {
+      console.warn("[DEV] Mock checkOllamaStatus called");
+      return {
+        available: false,
+        endpoint: "http://localhost:11434/api/generate",
+        error: "Not in Tauri environment",
+      };
+    }
+    return await invoke<OllamaStatus>("check_ollama_status");
+  }
+
+  /**
+   * AIを使ってタグを提案
+   *
+   * @param fileName - ファイル名
+   * @param fileType - ファイル種別
+   * @param contentPreview - ファイル内容のプレビュー
+   * @param modelName - 使用するOllamaモデル名（オプション）
+   */
+  static async suggestTagsAi(
+    fileName: string,
+    fileType: string,
+    contentPreview: string,
+    modelName?: string,
+  ): Promise<AiSuggestionResult> {
+    if (!isTauriEnvironment()) {
+      console.warn("[DEV] Mock suggestTagsAi called");
+      return {
+        tags: ["会社名ABC", "プロジェクトX", "2024年度", "見積書", "重要"],
+        model_used: "llama3.2",
+        success: true,
+        error: null,
+      };
+    }
+    return await invoke<AiSuggestionResult>("suggest_tags_ai", {
+      fileName,
+      fileType,
+      contentPreview,
+      modelName,
+    });
+  }
 }
 
 // ========== 型定義 ==========
@@ -543,4 +594,20 @@ export interface TauriAppSettings {
   auto_hide: boolean;
   theme: string;
   default_tags: string[];
+  ocr_enabled: boolean;
+  ai_enabled: boolean;
+  ollama_model: string;
+}
+
+export interface OllamaStatus {
+  available: boolean;
+  endpoint: string;
+  error: string | null;
+}
+
+export interface AiSuggestionResult {
+  tags: string[];
+  model_used: string;
+  success: boolean;
+  error: string | null;
 }

@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useScanData } from "@/hooks/useScanData";
 import type { DuplicateFileGroup } from "@/types";
+import { toast } from "@/store/toastStore";
 
 export const ScanIndexScreen: React.FC = () => {
   const {
@@ -38,25 +39,23 @@ export const ScanIndexScreen: React.FC = () => {
   const handleFullScan = async () => {
     try {
       setIsFullScanning(true);
-      setOperationMessage(
-        "PC全体のスキャンを開始しました。進捗は画面下部に表示されます。",
-      );
+      toast.info("スキャン開始", "PC全体のスキャンを開始しました");
 
       // Start scan in background - it will emit progress events
       invoke("scan_all_drives")
         .then(() => {
           setIsFullScanning(false);
-          setOperationMessage("PC全体のスキャンが完了しました！");
+          toast.success("スキャン完了", "PC全体のスキャンが完了しました");
           // Refresh statistics after scan completes
           window.location.reload();
         })
         .catch((err) => {
           console.error("Full scan error:", err);
           setIsFullScanning(false);
-          setOperationMessage(`スキャンエラー: ${err}`);
+          toast.error("スキャンエラー", String(err));
         });
     } catch {
-      setOperationMessage("PC全体スキャンの開始に失敗しました");
+      toast.error("スキャン失敗", "PC全体スキャンの開始に失敗しました");
       setIsFullScanning(false);
     }
   };
@@ -91,11 +90,14 @@ export const ScanIndexScreen: React.FC = () => {
 
       if (selectedPath) {
         await startScan(selectedPath as string);
-        setOperationMessage(`スキャンを開始しました: ${selectedPath}`);
+        toast.success(
+          "スキャン開始",
+          `スキャンを開始しました: ${selectedPath}`,
+        );
       }
     } catch (err) {
       console.error("Scan start error:", err);
-      setOperationMessage("スキャンの開始に失敗しました");
+      toast.error("スキャン失敗", "スキャンの開始に失敗しました");
     }
   };
 
@@ -113,9 +115,9 @@ export const ScanIndexScreen: React.FC = () => {
       setIsCleaningUp(true);
       setOperationMessage(null);
       const result = await cleanupDatabase();
-      setOperationMessage(result.message);
+      toast.success("クリーンアップ完了", result.message);
     } catch {
-      setOperationMessage("クリーンアップに失敗しました");
+      toast.error("クリーンアップ失敗", "クリーンアップに失敗しました");
     } finally {
       setIsCleaningUp(false);
     }
@@ -135,9 +137,9 @@ export const ScanIndexScreen: React.FC = () => {
       setIsRebuilding(true);
       setOperationMessage(null);
       const result = await rebuildDatabase();
-      setOperationMessage(result.message);
+      toast.success("再構築完了", result.message);
     } catch {
-      setOperationMessage("再構築に失敗しました");
+      toast.error("再構築失敗", "再構築に失敗しました");
     } finally {
       setIsRebuilding(false);
     }
@@ -145,8 +147,11 @@ export const ScanIndexScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <div className="flex items-center justify-center min-h-screen bg-background animate-fade-in">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-primary" />
+          <p className="text-sm text-muted-foreground">読み込み中...</p>
+        </div>
       </div>
     );
   }

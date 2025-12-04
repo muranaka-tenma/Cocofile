@@ -21,10 +21,28 @@ pub fn get_db_path(app: &tauri::AppHandle) -> Result<PathBuf, String> {
     Ok(app_data_dir.join("cocofile.db"))
 }
 
-/// データベース接続を取得
+/// データベース接続を取得（最適化設定付き）
 pub fn get_connection(app: &tauri::AppHandle) -> Result<Connection, String> {
     let db_path = get_db_path(app)?;
-    Connection::open(&db_path).map_err(|e| format!("Failed to open database: {}", e))
+    let conn = Connection::open(&db_path).map_err(|e| format!("Failed to open database: {}", e))?;
+
+    // パフォーマンス最適化設定
+    conn.pragma_update(None, "journal_mode", "WAL")
+        .map_err(|e| format!("Failed to set WAL mode: {}", e))?;
+
+    conn.pragma_update(None, "synchronous", "NORMAL")
+        .map_err(|e| format!("Failed to set synchronous mode: {}", e))?;
+
+    conn.pragma_update(None, "cache_size", "-20000") // 20MBキャッシュ
+        .map_err(|e| format!("Failed to set cache size: {}", e))?;
+
+    conn.pragma_update(None, "temp_store", "MEMORY")
+        .map_err(|e| format!("Failed to set temp store: {}", e))?;
+
+    conn.pragma_update(None, "mmap_size", "268435456") // 256MB mmap
+        .map_err(|e| format!("Failed to set mmap size: {}", e))?;
+
+    Ok(conn)
 }
 
 /// データベースを初期化（テーブル作成）
@@ -172,6 +190,44 @@ pub fn initialize_database(app: &tauri::AppHandle) -> Result<(), String> {
 
     conn.execute(
         "CREATE INDEX IF NOT EXISTS idx_hash_value ON file_metadata(hash_value)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create index: {}", e))?;
+
+    // 追加の最適化インデックス
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_file_size ON file_metadata(file_size)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_updated_at ON file_metadata(updated_at)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_access_count ON file_metadata(access_count DESC)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_last_accessed ON file_metadata(last_accessed_at DESC)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create index: {}", e))?;
+
+    // タグ検索用の複合インデックス
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_file_tags_tag ON file_tags(tag_name, file_path)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_file_tags_file ON file_tags(file_path, tag_name)",
         [],
     )
     .map_err(|e| format!("Failed to create index: {}", e))?;

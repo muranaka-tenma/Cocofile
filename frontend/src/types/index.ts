@@ -156,6 +156,9 @@ export interface AppSettings {
   excludedExtensions: string[];
   scanTiming: ScanTimingType;
 
+  // OCR settings
+  ocrEnabled: boolean;
+
   // UI settings
   hotkey: string;
   windowPosition: {
@@ -168,6 +171,10 @@ export interface AppSettings {
   // Tag settings
   defaultTags: string[];
   tagColors: Record<string, string>;
+
+  // AI settings
+  aiEnabled: boolean;
+  ollamaModel: string;
 
   // Metadata
   lastUpdatedAt: Date;

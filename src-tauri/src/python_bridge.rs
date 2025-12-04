@@ -147,7 +147,7 @@ impl PythonBridge {
         }
     }
 
-    /// Pythonプロセスからレスポンスを読み取り（30秒タイムアウト）
+    /// Pythonプロセスからレスポンスを読み取り（15秒タイムアウトに短縮）
     fn read_response(&mut self) -> Result<Value, String> {
         // stdoutがNoneの場合、自動再起動
         if self.stdout.is_none() {
@@ -167,13 +167,13 @@ impl PythonBridge {
 
         std::thread::spawn(move || {
             let mut stdout = stdout;
-            let mut line = String::new();
+            let mut line = String::with_capacity(1024); // 事前容量確保
             let result = stdout.read_line(&mut line);
             let _ = tx.send((stdout, result, line));
         });
 
-        // 30秒タイムアウト
-        match rx.recv_timeout(Duration::from_secs(30)) {
+        // 15秒タイムアウト（メモリ節約のため短縮）
+        match rx.recv_timeout(Duration::from_secs(15)) {
             Ok((stdout_back, result, line)) => {
                 // stdoutを戻す
                 self.stdout = Some(stdout_back);
@@ -196,7 +196,7 @@ impl PythonBridge {
             }
             Err(mpsc::RecvTimeoutError::Timeout) => {
                 debug_log(
-                    "ERROR: Python response timeout (30 seconds) - killing process for restart",
+                    "ERROR: Python response timeout (15 seconds) - killing process for restart",
                 );
                 // プロセスを強制終了してクリア（次回呼び出し時に自動再起動）
                 if let Some(ref mut process) = self.process {
@@ -206,7 +206,7 @@ impl PythonBridge {
                 self.process = None;
                 self.stdin = None;
                 self.stdout = None;
-                Err("Python response timeout after 30 seconds".to_string())
+                Err("Python response timeout after 15 seconds".to_string())
             }
             Err(mpsc::RecvTimeoutError::Disconnected) => {
                 Err("Python reader thread disconnected unexpectedly".to_string())
@@ -251,6 +251,11 @@ impl PythonBridge {
     /// テキストファイルを分析 (.txt, .md)
     pub fn analyze_text(&mut self, file_path: &str) -> Result<AnalyzeResult, String> {
         self.analyze_file("analyze_text", file_path)
+    }
+
+    /// 画像ファイルをOCR分析 (.png, .jpg, .jpeg, .gif, .bmp, .tiff)
+    pub fn analyze_image_ocr(&mut self, file_path: &str) -> Result<AnalyzeResult, String> {
+        self.analyze_file("analyze_image_ocr", file_path)
     }
 
     /// ファイルを分析（内部共通処理）

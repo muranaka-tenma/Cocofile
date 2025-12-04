@@ -19,6 +19,19 @@ export const ImagePreview: React.FC<ImagePreviewProps> = ({ filePath }) => {
   // Convert file path to proper URL format for Tauri
   const imageUrl = convertFileSrc(filePath);
 
+  // クリーンアップ: コンポーネントアンマウント時にメモリリークを防止
+  React.useEffect(() => {
+    return () => {
+      // 画像URLのrevoke（メモリ解放）
+      // Note: convertFileSrcはTauriのURL変換なので直接revokeは不要だが、
+      // 状態をクリアしてメモリ使用を最小化
+      setScale(1.0);
+      setRotation(0);
+      setIsLoading(true);
+      setError(null);
+    };
+  }, []);
+
   const handleImageLoad = () => {
     setIsLoading(false);
     setError(null);

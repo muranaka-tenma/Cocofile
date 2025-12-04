@@ -15,6 +15,9 @@ pub struct AppSettings {
     pub excluded_extensions: Vec<String>,
     pub scan_timing: String, // "realtime" | "idle" | "manual"
 
+    // OCR設定
+    pub ocr_enabled: bool, // OCR機能の有効/無効
+
     // UI設定
     pub hotkey: String,
     pub window_position: WindowPosition,
@@ -23,6 +26,10 @@ pub struct AppSettings {
 
     // タグ設定
     pub default_tags: Vec<String>,
+
+    // AI設定
+    pub ai_enabled: bool,
+    pub ollama_model: String,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -38,11 +45,14 @@ impl Default for AppSettings {
             excluded_folders: vec!["C:\\Windows".to_string(), "C:\\Program Files".to_string()],
             excluded_extensions: vec![".tmp".to_string(), ".log".to_string(), ".cache".to_string()],
             scan_timing: "realtime".to_string(),
+            ocr_enabled: true, // デフォルトでOCR有効
             hotkey: "Ctrl+Shift+F".to_string(),
             window_position: WindowPosition { x: 0, y: 0 },
             auto_hide: true,
             theme: "light".to_string(),
             default_tags: vec![],
+            ai_enabled: true, // デフォルトでAI提案有効
+            ollama_model: "llama3.2".to_string(),
         }
     }
 }

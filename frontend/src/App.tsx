@@ -11,6 +11,8 @@ import { DevNavigation } from "./components/DevNavigation";
 import { useNavigationStore } from "./store/navigationStore";
 import { useSettingsStore } from "./store/settingsStore";
 import { useTheme } from "./hooks/useTheme";
+import { useToastStore } from "./store/toastStore";
+import { ToastContainer } from "./components/ui/toast";
 import "./App.css";
 
 interface ScanProgress {
@@ -24,6 +26,7 @@ interface ScanProgress {
 function App() {
   const { currentScreen } = useNavigationStore();
   const { loadSettings, startFileWatcher, settings } = useSettingsStore();
+  const { toasts, removeToast } = useToastStore();
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
 
@@ -146,6 +149,9 @@ function App() {
       {renderScreen()}
       {/* Dev navigation - remove in production */}
       {import.meta.env.DEV && <DevNavigation />}
+
+      {/* Toast notifications */}
+      <ToastContainer toasts={toasts} onClose={removeToast} />
 
       {/* スキャン進捗表示 */}
       {(isScanning || scanProgress) && (

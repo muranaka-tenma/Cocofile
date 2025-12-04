@@ -2,7 +2,7 @@
 // Based on mockups/SettingsScreen.html
 
 import React, { useEffect, useState } from "react";
-import { Trash2, Plus, X, Activity } from "lucide-react";
+import { Trash2, Plus, X, Activity, Sparkles, RefreshCw } from "lucide-react";
 import { useSettingsStore } from "@/store/settingsStore";
 import { SCAN_TIMING_TYPES } from "@/types";
 import type { ScanTimingType } from "@/types";
@@ -15,6 +15,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { listen } from "@tauri-apps/api/event";
+import { TauriService } from "@/services/TauriService";
+import type { OllamaStatus } from "@/services/TauriService";
+import { toast } from "@/store/toastStore";
 
 interface FileWatcherStats {
   indexed: number;
@@ -32,6 +35,9 @@ export const SettingsScreen: React.FC = () => {
     loadSettings,
     updateScanTiming,
     updateAutoHide,
+    updateOcrEnabled,
+    updateAiEnabled,
+    updateOllamaModel,
     addWatchedFolder,
     removeWatchedFolder,
     addExcludedFolder,
@@ -50,11 +56,31 @@ export const SettingsScreen: React.FC = () => {
   const [watcherStats, setWatcherStats] = useState<FileWatcherStats | null>(
     null,
   );
+  const [ollamaStatus, setOllamaStatus] = useState<OllamaStatus | null>(null);
+  const [checkingOllama, setCheckingOllama] = useState(false);
 
   useEffect(() => {
     loadSettings();
     checkFileWatcherStatus();
+    checkOllamaConnection();
   }, [loadSettings, checkFileWatcherStatus]);
+
+  const checkOllamaConnection = async () => {
+    setCheckingOllama(true);
+    try {
+      const status = await TauriService.checkOllamaStatus();
+      setOllamaStatus(status);
+    } catch (error) {
+      console.error("Failed to check Ollama status:", error);
+      setOllamaStatus({
+        available: false,
+        endpoint: "http://localhost:11434",
+        error: "接続チェックに失敗しました",
+      });
+    } finally {
+      setCheckingOllama(false);
+    }
+  };
 
   // ファイル監視統計情報をリッスン
   useEffect(() => {
@@ -78,6 +104,7 @@ export const SettingsScreen: React.FC = () => {
     const folderPath = prompt("フォルダパスを入力してください:");
     if (folderPath) {
       await addWatchedFolder(folderPath);
+      toast.success("フォルダ追加", "監視フォルダを追加しました");
     }
   };
 
@@ -86,6 +113,7 @@ export const SettingsScreen: React.FC = () => {
     const folderPath = prompt("除外フォルダパスを入力してください:");
     if (folderPath) {
       await addExcludedFolder(folderPath);
+      toast.success("フォルダ追加", "除外フォルダを追加しました");
     }
   };
 
@@ -97,6 +125,7 @@ export const SettingsScreen: React.FC = () => {
       }
       await addExcludedExtension(extension);
       setNewExtensionInput("");
+      toast.success("拡張子追加", "除外拡張子を追加しました");
     }
   };
 
@@ -104,13 +133,17 @@ export const SettingsScreen: React.FC = () => {
     if (newTagInput.trim()) {
       await addDefaultTag(newTagInput.trim());
       setNewTagInput("");
+      toast.success("タグ追加", "デフォルトタグを追加しました");
     }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">読み込み中...</p>
+      <div className="flex items-center justify-center min-h-screen animate-fade-in">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin text-primary mx-auto mb-2" />
+          <p className="text-muted-foreground">読み込み中...</p>
+        </div>
       </div>
     );
   }
@@ -275,6 +308,138 @@ export const SettingsScreen: React.FC = () => {
               </Label>
             </div>
           </RadioGroup>
+        </CardContent>
+      </Card>
+
+      {/* OCR設定 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>OCR設定</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center space-x-2">
+            <Checkbox
+              id="ocrEnabled"
+              checked={settings.ocrEnabled}
+              onCheckedChange={(checked) =>
+                updateOcrEnabled(checked as boolean)
+              }
+            />
+            <Label htmlFor="ocrEnabled" className="cursor-pointer">
+              画像内テキスト抽出（OCR）を有効にする
+            </Label>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            PNG、JPG、GIF、BMP、TIFF形式の画像ファイルから自動的にテキストを抽出します。
+            日本語と英語の両方に対応しています。
+            {!settings.ocrEnabled && (
+              <span className="block mt-2 text-orange-600">
+                ⚠️ OCR無効時は画像ファイルの内容を検索できません
+              </span>
+            )}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* AI設定 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            AI タグ提案設定
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {/* Ollama接続状態 */}
+          <div className="space-y-2">
+            <Label>Ollama接続状態</Label>
+            <div
+              className={`rounded-md p-4 border ${
+                ollamaStatus?.available
+                  ? "bg-green-50 border-green-200 dark:bg-green-950 dark:border-green-800"
+                  : "bg-red-50 border-red-200 dark:bg-red-950 dark:border-red-800"
+              }`}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <p className="font-medium">
+                    {checkingOllama
+                      ? "接続確認中..."
+                      : ollamaStatus?.available
+                        ? "接続成功"
+                        : "接続失敗"}
+                  </p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    エンドポイント: {ollamaStatus?.endpoint || "未確認"}
+                  </p>
+                  {ollamaStatus?.error && (
+                    <p className="text-sm text-destructive mt-1">
+                      エラー: {ollamaStatus.error}
+                    </p>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={checkOllamaConnection}
+                  disabled={checkingOllama}
+                >
+                  <RefreshCw
+                    className={`h-4 w-4 ${checkingOllama ? "animate-spin" : ""}`}
+                  />
+                </Button>
+              </div>
+            </div>
+            {!ollamaStatus?.available && (
+              <p className="text-sm text-muted-foreground bg-muted rounded p-3">
+                ⚠️
+                Ollamaが起動していません。AI提案を使用するには、Ollamaをインストールして起動してください。
+                <br />
+                インストール方法:{" "}
+                <a
+                  href="https://ollama.ai"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
+                  https://ollama.ai
+                </a>
+              </p>
+            )}
+          </div>
+
+          {/* AI提案の有効/無効 */}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="aiEnabled"
+                checked={settings.aiEnabled ?? true}
+                onCheckedChange={(checked) =>
+                  updateAiEnabled(checked as boolean)
+                }
+              />
+              <Label htmlFor="aiEnabled" className="cursor-pointer">
+                AI タグ提案を有効にする
+              </Label>
+            </div>
+            <p className="text-sm text-muted-foreground ml-6">
+              ファイル詳細画面でAIによるタグ提案を使用できます
+            </p>
+          </div>
+
+          {/* 使用するモデル */}
+          <div className="space-y-2">
+            <Label htmlFor="ollamaModel">使用するモデル</Label>
+            <Input
+              id="ollamaModel"
+              value={settings.ollamaModel || "llama3.2"}
+              onChange={(e) => updateOllamaModel(e.target.value)}
+              placeholder="llama3.2"
+            />
+            <p className="text-sm text-muted-foreground">
+              推奨: llama3.2, llama2, mistral など
+            </p>
+          </div>
         </CardContent>
       </Card>
 

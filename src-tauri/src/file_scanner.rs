@@ -124,6 +124,15 @@ fn register_file_metadata(conn: &Connection, path: &Path) -> Result<(), String> 
 
 /// ファイルを処理してデータベースに登録
 fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
+    process_file_with_settings(conn, path, true) // デフォルトでOCR有効
+}
+
+/// ファイルを処理してデータベースに登録（OCR設定対応）
+fn process_file_with_settings(
+    conn: &Connection,
+    path: &Path,
+    ocr_enabled: bool,
+) -> Result<(), String> {
     let file_path = path.to_str().ok_or("Invalid file path")?.to_string();
 
     let file_name = path
@@ -183,6 +192,15 @@ fn process_file(conn: &Connection, path: &Path) -> Result<(), String> {
             "docx" => bridge.analyze_word(&file_path),
             "pptx" => bridge.analyze_ppt(&file_path),
             "txt" | "md" => bridge.analyze_text(&file_path),
+            // OCR対応画像形式（OCR有効時のみ）
+            "png" | "jpg" | "jpeg" | "gif" | "bmp" | "tiff" | "tif" => {
+                if ocr_enabled {
+                    bridge.analyze_image_ocr(&file_path)
+                } else {
+                    // OCR無効時はスキップ
+                    Err("OCR disabled".to_string())
+                }
+            }
             _ => Err(format!("Unsupported file type: {}", file_type)),
         };
 
@@ -237,19 +255,21 @@ fn log_analysis_error(file_path: &str, file_type: &str, error: &str) {
     crate::logger::error("FileAnalyzer", &message);
 }
 
-/// テキストをN-gram（2-gram）に変換
+/// テキストをN-gram（2-gram）に変換（最適化版）
 /// 例: "営業資料" → "営業 業資 資料"
 fn ngram_tokenize(text: &str) -> String {
     let n = 2;
-    // 文字数制限（1MB相当）
-    const MAX_CHARS: usize = 1_000_000;
+    // 文字数制限（500KB相当に削減してメモリ節約）
+    const MAX_CHARS: usize = 500_000;
 
-    // 改行・余分なスペースを削除
-    let cleaned = text.replace("\n", " ").replace("\r", "");
-    let cleaned = cleaned.split_whitespace().collect::<Vec<_>>().join(" ");
+    // 改行・余分なスペースを削除（String::replaceを避けてメモリ効率化）
+    let cleaned: String = text
+        .chars()
+        .filter(|c| *c != '\n' && *c != '\r')
+        .take(MAX_CHARS)
+        .collect();
 
-    // 2-gram生成（文字数制限付き）
-    let chars: Vec<char> = cleaned.chars().take(MAX_CHARS).collect();
+    let chars: Vec<char> = cleaned.chars().collect();
     let char_count = chars.len();
 
     if char_count < n {
@@ -258,17 +278,17 @@ fn ngram_tokenize(text: &str) -> String {
 
     // 事前容量確保（各gramは2文字+スペース1文字で約3バイト）
     let estimated_capacity = (char_count.saturating_sub(n - 1)) * 3;
-    let mut tokens = Vec::with_capacity(char_count.saturating_sub(n - 1));
+    let mut result = String::with_capacity(estimated_capacity);
 
+    // 直接resultに書き込んでVec<String>の中間生成を回避
     for i in 0..char_count.saturating_sub(n - 1) {
-        let gram: String = chars[i..i + n].iter().collect();
-        if !gram.trim().is_empty() {
-            tokens.push(gram);
+        if i > 0 {
+            result.push(' ');
         }
+        result.push(chars[i]);
+        result.push(chars[i + 1]);
     }
 
-    let mut result = String::with_capacity(estimated_capacity);
-    result.push_str(&tokens.join(" "));
     result
 }
 
@@ -283,7 +303,7 @@ pub fn search_files(app: &tauri::AppHandle, keyword: &str) -> Result<Vec<SearchR
     // N-gram化した検索クエリを生成
     let search_query = prepare_fts5_query(keyword);
 
-    // FTS5で全文検索（スニペット付き）
+    // FTS5で全文検索（スニペット付き、最適化版）
     let mut stmt = conn
         .prepare(
             "SELECT
@@ -291,13 +311,13 @@ pub fn search_files(app: &tauri::AppHandle, keyword: &str) -> Result<Vec<SearchR
                 m.file_name,
                 m.file_type,
                 m.file_size,
-                snippet(files_fts, 1, '[', ']', '...', 64) as snippet,
+                snippet(files_fts, 1, '[', ']', '...', 32) as snippet,
                 bm25(files_fts) as rank
              FROM files_fts
              JOIN file_metadata m ON files_fts.file_path = m.file_path
              WHERE files_fts MATCH ?1
              ORDER BY rank
-             LIMIT 100",
+             LIMIT 200",
         )
         .map_err(|e| format!("Failed to prepare FTS5 query: {}", e))?;
 
@@ -572,6 +592,8 @@ pub fn scan_all_drives(app: tauri::AppHandle) -> Result<(), String> {
             .map(|e| e.to_lowercase())
             .collect();
 
+        let ocr_enabled = settings.ocr_enabled;
+
         // 全ドライブを取得
         let drives = get_all_drives();
 
@@ -597,6 +619,7 @@ pub fn scan_all_drives(app: tauri::AppHandle) -> Result<(), String> {
                 &excluded_extensions,
                 total_files.clone(),
                 processed_files.clone(),
+                ocr_enabled,
             ) {
                 crate::logger::error("FileScanner", &format!("Error scanning {}: {}", drive, e));
             }
@@ -633,11 +656,12 @@ fn scan_drive_with_exclusions(
     excluded_extensions: &[String],
     total_files: Arc<Mutex<usize>>,
     processed_files: Arc<Mutex<usize>>,
+    ocr_enabled: bool,
 ) -> Result<(), String> {
     let conn = database::get_connection(app)?;
     let path = Path::new(drive);
 
-    scan_directory_with_exclusions(
+    scan_directory_with_exclusions_and_ocr(
         app,
         &conn,
         path,
@@ -645,11 +669,13 @@ fn scan_drive_with_exclusions(
         excluded_extensions,
         total_files,
         processed_files,
+        ocr_enabled,
     )
 }
 
-/// ディレクトリを除外設定付きで再帰スキャン
-fn scan_directory_with_exclusions(
+/// ディレクトリを除外設定付きで再帰スキャン（OCR設定対応）
+#[allow(clippy::too_many_arguments)]
+fn scan_directory_with_exclusions_and_ocr(
     app: &tauri::AppHandle,
     conn: &Connection,
     path: &Path,
@@ -657,6 +683,7 @@ fn scan_directory_with_exclusions(
     excluded_extensions: &[String],
     total_files: Arc<Mutex<usize>>,
     processed_files: Arc<Mutex<usize>>,
+    ocr_enabled: bool,
 ) -> Result<(), String> {
     // 除外フォルダチェック
     let path_str = path.to_string_lossy().to_lowercase();
@@ -722,7 +749,7 @@ fn scan_directory_with_exclusions(
         if entry_path.is_dir() {
             _dir_count_in_dir += 1;
             // 再帰的にスキャン
-            let _ = scan_directory_with_exclusions(
+            let _ = scan_directory_with_exclusions_and_ocr(
                 app,
                 conn,
                 &entry_path,
@@ -730,6 +757,7 @@ fn scan_directory_with_exclusions(
                 excluded_extensions,
                 total_files.clone(),
                 processed_files.clone(),
+                ocr_enabled,
             );
         } else if entry_path.is_file() {
             _file_count_in_dir += 1;
@@ -776,7 +804,7 @@ fn scan_directory_with_exclusions(
                 );
             }
 
-            match process_file(conn, &entry_path) {
+            match process_file_with_settings(conn, &entry_path, ocr_enabled) {
                 Ok(_) => {
                     *processed_files.lock().unwrap() += 1;
                 }

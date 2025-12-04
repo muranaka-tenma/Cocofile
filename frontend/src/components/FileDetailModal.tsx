@@ -17,6 +17,7 @@ import { RealFileService } from "@/services/RealFileService";
 import { TagBadge } from "@/components/TagBadge";
 import { useTagSuggestions } from "@/hooks/useTagSuggestions";
 import { FilePreview } from "@/components/FilePreview";
+import { TauriService } from "@/services/TauriService";
 import {
   FileText,
   Star,
@@ -26,6 +27,8 @@ import {
   Edit,
   Plus,
   Info,
+  Sparkles,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -60,6 +63,9 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
 
   const [newTag, setNewTag] = useState("");
   const { suggestions } = useTagSuggestions(fileMetadata);
+  const [aiSuggestions, setAiSuggestions] = useState<string[]>([]);
+  const [isLoadingAi, setIsLoadingAi] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   // Handle tag addition
   const handleAddTag = () => {
@@ -73,6 +79,46 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
   // Handle tag removal
   const handleRemoveTag = (tag: string) => {
     removeTag(tag);
+  };
+
+  // Handle AI tag suggestions
+  const handleAiSuggest = async () => {
+    if (!fileMetadata) return;
+
+    setIsLoadingAi(true);
+    setAiError(null);
+    setAiSuggestions([]);
+
+    try {
+      // ファイル内容のプレビューを取得（最初の1000文字）
+      const contentPreview = fileMetadata.extractedText
+        ? fileMetadata.extractedText.substring(0, 1000)
+        : "";
+
+      const result = await TauriService.suggestTagsAi(
+        fileMetadata.fileName,
+        fileMetadata.fileType,
+        contentPreview,
+      );
+
+      if (result.success && result.tags.length > 0) {
+        // 既存のタグを除外
+        const newSuggestions = result.tags.filter(
+          (tag) => !editedTags.includes(tag),
+        );
+        setAiSuggestions(newSuggestions);
+      } else {
+        setAiError(result.error || "AIがタグを提案できませんでした");
+      }
+    } catch (err) {
+      setAiError(
+        err instanceof Error
+          ? err.message
+          : "AI提案に失敗しました。Ollamaが起動しているか確認してください。",
+      );
+    } finally {
+      setIsLoadingAi(false);
+    }
   };
 
   // Handle save changes
@@ -282,6 +328,20 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
                 <Plus className="h-4 w-4 mr-1" />
                 追加
               </Button>
+              <Button
+                onClick={handleAiSuggest}
+                size="sm"
+                variant="outline"
+                disabled={isLoadingAi}
+                className="gap-1"
+              >
+                {isLoadingAi ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                AI提案
+              </Button>
             </div>
 
             <div className="flex flex-wrap gap-2">
@@ -294,7 +354,42 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
               ))}
             </div>
 
-            {/* Tag suggestions */}
+            {/* AI tag suggestions */}
+            {aiSuggestions.length > 0 && (
+              <div className="space-y-2 pt-2 border-t">
+                <p className="text-xs text-muted-foreground font-medium flex items-center gap-1">
+                  <Sparkles className="h-3 w-3" />
+                  AI提案タグ
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {aiSuggestions.map((tag) => (
+                    <button
+                      key={tag}
+                      onClick={() => {
+                        if (!editedTags.includes(tag)) {
+                          addTag(tag);
+                          setAiSuggestions((prev) =>
+                            prev.filter((t) => t !== tag),
+                          );
+                        }
+                      }}
+                      className="px-3 py-1 text-xs rounded-full border border-purple-200 bg-purple-50 text-purple-700 hover:bg-purple-100 transition-colors"
+                    >
+                      + {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* AI error message */}
+            {aiError && (
+              <div className="text-xs text-destructive bg-destructive/10 p-2 rounded border border-destructive/20">
+                {aiError}
+              </div>
+            )}
+
+            {/* Tag suggestions (rule-based) */}
             {suggestions.length > 0 && (
               <div className="space-y-2 pt-2 border-t">
                 <p className="text-xs text-muted-foreground font-medium">

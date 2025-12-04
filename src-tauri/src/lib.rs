@@ -1,3 +1,4 @@
+mod ai_suggester;
 mod database;
 mod favorite_manager;
 pub mod file_scanner; // Public for testing
@@ -292,6 +293,25 @@ fn remove_excluded_folder(app: tauri::AppHandle, folder_path: String) -> Result<
     settings_manager::remove_excluded_folder(&app, folder_path)
 }
 
+// ========== AI タグ提案API ==========
+
+/// Ollamaの接続状態を確認
+#[tauri::command]
+async fn check_ollama_status() -> Result<ai_suggester::OllamaStatus, String> {
+    Ok(ai_suggester::check_ollama_status().await)
+}
+
+/// AIを使ってタグを提案
+#[tauri::command]
+async fn suggest_tags_ai(
+    file_name: String,
+    file_type: String,
+    content_preview: String,
+    model_name: Option<String>,
+) -> Result<ai_suggester::AiSuggestionResult, String> {
+    ai_suggester::suggest_tags_ai(file_name, file_type, content_preview, model_name).await
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -346,6 +366,8 @@ pub fn run() {
             remove_watched_folder,
             add_excluded_folder,
             remove_excluded_folder,
+            check_ollama_status,
+            suggest_tags_ai,
             organization_manager::get_organization_suggestions,
             organization_manager::apply_organization_suggestion,
             organization_manager::move_files_batch,

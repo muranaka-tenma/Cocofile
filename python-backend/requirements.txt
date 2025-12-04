@@ -12,5 +12,9 @@ docx2txt==0.8
 # PowerPoint分析
 python-pptx==0.6.23
 
+# OCR（画像内テキスト抽出）
+pytesseract==0.3.10
+Pillow==10.1.0
+
 # PyInstaller（バイナリ化用）
 pyinstaller==6.3.0
