@@ -223,6 +223,38 @@ export class TauriService {
     return await invoke<SearchResult[]>("search_files", { keyword });
   }
 
+  /**
+   * 正規表現でファイルを検索
+   *
+   * @param pattern - 正規表現パターン
+   * @returns 検索結果のリスト
+   */
+  static async searchFilesRegex(pattern: string): Promise<SearchResult[]> {
+    if (!isTauriEnvironment()) {
+      console.warn("[DEV] Mock searchFilesRegex called:", pattern);
+      // モック検索結果を返す
+      return [
+        {
+          file_path: "/home/user/Documents/report2024.pdf",
+          file_name: "report2024.pdf",
+          file_type: "pdf",
+          file_size: 1048576,
+          snippet: `Filename match: [report2024].pdf`,
+          rank: 1.0,
+        },
+        {
+          file_path: "/home/user/Documents/invoice2024.xlsx",
+          file_name: "invoice2024.xlsx",
+          file_type: "excel",
+          file_size: 524288,
+          snippet: `Content match: ...[2024]年度...`,
+          rank: 0.8,
+        },
+      ];
+    }
+    return await invoke<SearchResult[]>("search_files_regex", { pattern });
+  }
+
   // ========== タグ管理API ==========
 
   /**
@@ -429,6 +461,30 @@ export class TauriService {
       return;
     }
     return await invoke("remove_excluded_folder", { folderPath });
+  }
+
+  // ========== メモ管理API ==========
+
+  /**
+   * ファイルのメモを更新
+   */
+  static async updateMemo(filePath: string, memo: string): Promise<void> {
+    if (!isTauriEnvironment()) {
+      console.warn("[DEV] Mock updateMemo called:", filePath, memo);
+      return;
+    }
+    return await invoke("update_memo", { filePath, memo });
+  }
+
+  /**
+   * ファイルのメモを取得
+   */
+  static async getMemo(filePath: string): Promise<string | null> {
+    if (!isTauriEnvironment()) {
+      console.warn("[DEV] Mock getMemo called:", filePath);
+      return null;
+    }
+    return await invoke<string | null>("get_memo", { filePath });
   }
 
   // ========== ファイル監視API ==========

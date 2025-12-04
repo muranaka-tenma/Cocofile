@@ -21,6 +21,8 @@ import {
   X,
   Download,
   Copy,
+  Code,
+  AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -81,12 +83,15 @@ export const MainSearchScreen: React.FC = () => {
     filters,
     activeTab,
     sortBy,
+    isRegexMode,
+    regexError,
     setKeyword,
     toggleFileType,
     setActiveTab,
     setFilters,
     setDateRange,
     setSortBy,
+    setIsRegexMode,
   } = useSearchStore();
 
   const {
@@ -244,19 +249,19 @@ export const MainSearchScreen: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-4xl mx-auto bg-white rounded-lg shadow-md p-4">
+    <div className="min-h-screen bg-background p-4">
+      <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-md p-4 border border-border">
         {/* Header with Hotkey Hint */}
-        <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200">
-          <h1 className="text-lg font-medium text-blue-600">CocoFile</h1>
+        <div className="flex items-center justify-between mb-4 pb-3 border-b border-border">
+          <h1 className="text-lg font-medium text-primary">CocoFile</h1>
           <div className="flex gap-2">
-            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
               Ctrl+K: 検索
             </div>
-            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
               ↑↓: 選択
             </div>
-            <div className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+            <div className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded">
               Enter: 詳細
             </div>
           </div>
@@ -270,14 +275,18 @@ export const MainSearchScreen: React.FC = () => {
               <Input
                 ref={searchInputRef}
                 type="text"
-                placeholder="ファイルを検索 (例: 先週のABC社の見積もり)"
+                placeholder={
+                  isRegexMode
+                    ? "正規表現パターン (例: report\\d{4}\\.pdf)"
+                    : "ファイルを検索 (例: 先週のABC社の見積もり)"
+                }
                 value={keyword}
                 onChange={(e) => setKeyword(e.target.value)}
                 onFocus={() => setShowSearchHistory(true)}
                 onBlur={() =>
                   setTimeout(() => setShowSearchHistory(false), 200)
                 }
-                className="pl-10"
+                className={`pl-10 ${isRegexMode ? "border-purple-500 focus:ring-purple-500" : ""}`}
               />
               <SearchHistoryDropdown
                 history={getRecentSearches(10)}
@@ -290,6 +299,15 @@ export const MainSearchScreen: React.FC = () => {
                 show={showSearchHistory}
               />
             </div>
+            <Button
+              variant={isRegexMode ? "default" : "outline"}
+              onClick={() => setIsRegexMode(!isRegexMode)}
+              className="gap-2"
+              title="正規表現検索を有効化"
+            >
+              <Code className="h-4 w-4" />
+              正規表現
+            </Button>
             <Button
               variant="outline"
               onClick={() => setAdvancedSearchOpen(true)}
@@ -311,6 +329,14 @@ export const MainSearchScreen: React.FC = () => {
               一括選択
             </Button>
           </div>
+
+          {/* Regex Error Display */}
+          {isRegexMode && regexError && (
+            <div className="mt-2 p-2 bg-red-50 border border-red-200 rounded flex items-center gap-2 text-sm text-red-700">
+              <AlertCircle className="h-4 w-4 flex-shrink-0" />
+              <span>{regexError}</span>
+            </div>
+          )}
         </div>
 
         {/* Batch Actions Toolbar */}

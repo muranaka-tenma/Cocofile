@@ -10,6 +10,7 @@ import FileOrganizationScreen from "./screens/FileOrganizationScreen";
 import { DevNavigation } from "./components/DevNavigation";
 import { useNavigationStore } from "./store/navigationStore";
 import { useSettingsStore } from "./store/settingsStore";
+import { useTheme } from "./hooks/useTheme";
 import "./App.css";
 
 interface ScanProgress {
@@ -25,6 +26,9 @@ function App() {
   const { loadSettings, startFileWatcher, settings } = useSettingsStore();
   const [isScanning, setIsScanning] = useState(false);
   const [scanProgress, setScanProgress] = useState<ScanProgress | null>(null);
+
+  // テーマを初期化
+  useTheme();
 
   // 設定を読み込んでファイル監視を自動開始
   useEffect(() => {
@@ -44,6 +48,30 @@ function App() {
       });
     }
   }, [settings, startFileWatcher]);
+
+  // ファイル監視イベントをリッスン
+  useEffect(() => {
+    const unlisten = listen<{
+      indexed: number;
+      deleted: number;
+      errors: number;
+      timestamp: string;
+    }>("file-watcher-update", (event) => {
+      console.log("[FileWatcher] Update received:", event.payload);
+      const { indexed, deleted, errors } = event.payload;
+
+      // 通知を表示（オプション）
+      if (indexed > 0 || deleted > 0) {
+        console.log(
+          `[FileWatcher] ${indexed} files indexed, ${deleted} files deleted${errors > 0 ? `, ${errors} errors` : ""}`,
+        );
+      }
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 
   // 初回起動時のみ自動でPC全体をスキャン
   useEffect(() => {
@@ -121,10 +149,10 @@ function App() {
 
       {/* スキャン進捗表示 */}
       {(isScanning || scanProgress) && (
-        <div className="fixed bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg p-4 shadow-lg z-40 w-80 border border-gray-200">
+        <div className="fixed bottom-4 right-4 bg-card rounded-lg p-4 shadow-lg z-40 w-80 border border-border">
           <div className="flex items-start gap-3">
             {isScanning && scanProgress?.status !== "completed" && (
-              <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-500 border-t-transparent flex-shrink-0 mt-0.5"></div>
+              <div className="animate-spin rounded-full h-5 w-5 border-2 border-primary border-t-transparent flex-shrink-0 mt-0.5"></div>
             )}
             {scanProgress?.status === "completed" && (
               <div className="text-green-500 flex-shrink-0">✓</div>
@@ -133,7 +161,7 @@ function App() {
               {scanProgress?.status === "completed" ? (
                 <>
                   <p className="text-green-600 font-medium">スキャン完了！</p>
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm text-muted-foreground">
                     {scanProgress.processed_files.toLocaleString()}{" "}
                     ファイルをインデックス化しました
                   </p>
@@ -143,18 +171,18 @@ function App() {
                   <p className="text-sm font-medium mb-1">
                     PC全体をスキャン中...
                   </p>
-                  <p className="text-xs text-gray-500 mb-1">
+                  <p className="text-xs text-muted-foreground mb-1">
                     ドライブ: {scanProgress?.current_drive || "検出中..."}
                   </p>
                   <p
-                    className="text-xs text-gray-500 truncate"
+                    className="text-xs text-muted-foreground truncate"
                     title={scanProgress?.current_folder}
                   >
                     {scanProgress?.current_folder
                       ? `📁 ${scanProgress.current_folder.split("\\").slice(-2).join("\\")}`
                       : "準備中..."}
                   </p>
-                  <p className="text-sm font-medium text-blue-600 mt-2">
+                  <p className="text-sm font-medium text-primary mt-2">
                     {scanProgress?.processed_files?.toLocaleString() || 0}{" "}
                     ファイル処理済み
                   </p>

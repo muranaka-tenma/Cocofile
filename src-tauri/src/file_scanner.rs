@@ -1,6 +1,7 @@
 use crate::database;
 use crate::python_bridge;
 use crate::settings_manager;
+use regex::Regex;
 use rusqlite::Connection;
 use std::fs;
 use std::path::Path;
@@ -346,6 +347,116 @@ pub fn search_files(app: &tauri::AppHandle, keyword: &str) -> Result<Vec<SearchR
             .filter_map(Result::ok)
             .collect());
     }
+
+    Ok(results)
+}
+
+/// 正規表現でファイルを検索
+/// ファイル名とファイル内容の両方を正規表現でマッチング
+pub fn search_files_regex(
+    app: &tauri::AppHandle,
+    pattern: &str,
+) -> Result<Vec<SearchResult>, String> {
+    let conn = database::get_connection(app)?;
+
+    if pattern.trim().is_empty() {
+        return Ok(Vec::new());
+    }
+
+    // 正規表現をコンパイル（エラーの場合は詳細なメッセージを返す）
+    let regex = Regex::new(pattern).map_err(|e| format!("Invalid regex pattern: {}", e))?;
+
+    // 全てのファイルメタデータを取得
+    let mut stmt = conn
+        .prepare(
+            "SELECT m.file_path, m.file_name, m.file_type, m.file_size, f.content
+             FROM file_metadata m
+             LEFT JOIN files_fts f ON m.file_path = f.file_path
+             LIMIT 10000",
+        )
+        .map_err(|e| format!("Failed to prepare regex query: {}", e))?;
+
+    let mut results = Vec::new();
+    let mut match_count = 0;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok((
+                row.get::<_, String>(0)?,         // file_path
+                row.get::<_, String>(1)?,         // file_name
+                row.get::<_, String>(2)?,         // file_type
+                row.get::<_, i64>(3)?,            // file_size
+                row.get::<_, Option<String>>(4)?, // content
+            ))
+        })
+        .map_err(|e| format!("Failed to execute regex query: {}", e))?;
+
+    for (file_path, file_name, file_type, file_size, content) in rows.flatten() {
+        let mut matched = false;
+        let mut snippet: Option<String> = None;
+        let mut rank = 0.0;
+
+        // ファイル名で正規表現マッチング
+        if regex.is_match(&file_name) {
+            matched = true;
+            rank = 1.0; // ファイル名マッチは高スコア
+            snippet = Some(format!("Filename match: {}", file_name));
+        }
+
+        // ファイル内容で正規表現マッチング
+        if let Some(ref content_text) = content {
+            if let Some(mat) = regex.find(content_text) {
+                matched = true;
+                if rank == 0.0 {
+                    rank = 0.8; // 内容マッチは中スコア
+                } else {
+                    rank = 1.2; // ファイル名と内容両方マッチは最高スコア
+                }
+
+                // スニペットを生成（マッチ箇所の前後64文字）
+                let start = mat.start().saturating_sub(32);
+                let end = (mat.end() + 32).min(content_text.len());
+                let snippet_text = &content_text[start..end];
+                let snippet_with_marker =
+                    snippet_text.replace(mat.as_str(), &format!("[{}]", mat.as_str()));
+                snippet = Some(format!("...{}...", snippet_with_marker));
+            }
+        }
+
+        if matched {
+            match_count += 1;
+            results.push(SearchResult {
+                file_path,
+                file_name,
+                file_type,
+                file_size,
+                snippet,
+                rank: Some(rank),
+            });
+
+            // 最大100件まで
+            if match_count >= 100 {
+                break;
+            }
+        }
+    }
+
+    // スコア順にソート
+    results.sort_by(|a, b| {
+        b.rank
+            .unwrap_or(0.0)
+            .partial_cmp(&a.rank.unwrap_or(0.0))
+            .unwrap_or(std::cmp::Ordering::Equal)
+    });
+
+    crate::logger::info(
+        "FileScanner",
+        &format!(
+            "Regex search completed: pattern='{}', matches={}",
+            pattern,
+            results.len()
+        ),
+    );
 
     Ok(results)
 }

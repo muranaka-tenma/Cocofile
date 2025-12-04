@@ -19,6 +19,7 @@ PDF、Excel、Word、PowerPointファイルの内容を全文検索し、効率�
 
 - **完全オフライン動作** - データは一切外部に送信されません
 - **高速全文検索** - SQLite FTS5 + N-gram tokenizer による日本語対応検索
+- **正規表現検索** - 強力なパターンマッチングでファイル名と内容を検索
 - **多形式対応** - PDF、Excel（.xlsx/.xls）、Word（.docx）、PowerPoint（.pptx）
 - **軽量設計** - アイドル時メモリ使用量30-40MB目標
 - **クロスプラットフォーム** - Windows、macOS、Linux対応
@@ -296,6 +297,7 @@ cp dist/python-analyzer ../src-tauri/binaries/python-analyzer-{target-triple}
 - ✅ ファイル分析（PDF/Excel/Word/PowerPoint）
 - ✅ タグ管理・お気に入り機能
 - ✅ ファイル整理支援（Phase 7）
+- ✅ ダークモード対応（ライト/ダーク/システム設定の3モード）
 
 **技術実装**:
 - ✅ 35個のTauri Command API

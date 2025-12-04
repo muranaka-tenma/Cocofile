@@ -16,11 +16,7 @@ import { useFileDetailStore } from "@/store/fileDetailStore";
 import { RealFileService } from "@/services/RealFileService";
 import { TagBadge } from "@/components/TagBadge";
 import { useTagSuggestions } from "@/hooks/useTagSuggestions";
-import { PDFPreview } from "@/components/PDFPreview";
-import { ImagePreview } from "@/components/ImagePreview";
-import { ExcelPreview } from "@/components/ExcelPreview";
-import { WordPreview } from "@/components/WordPreview";
-import { PowerPointPreview } from "@/components/PowerPointPreview";
+import { FilePreview } from "@/components/FilePreview";
 import {
   FileText,
   Star,
@@ -50,12 +46,14 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
     hasUnsavedChanges,
     isLoading,
     error,
+    successMessage,
     closeModal,
     addTag,
     removeTag,
     setEditedMemo,
     setIsLoading,
     setError,
+    setSuccessMessage,
     setFileMetadata,
     markSaved,
   } = useFileDetailStore();
@@ -84,6 +82,7 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
     try {
       setIsLoading(true);
       setError(null);
+      setSuccessMessage(null);
 
       // Update tags
       await fileService.updateTags(fileMetadata.filePath, editedTags);
@@ -107,6 +106,14 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
         setFileMetadata(updatedMetadata);
       }
       markSaved();
+
+      // Show success message
+      setSuccessMessage("変更を保存しました");
+
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setSuccessMessage(null);
+      }, 3000);
 
       // Notify parent component
       if (onFileUpdated) {
@@ -202,36 +209,12 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
           {/* Preview section */}
           <div className="bg-muted rounded-lg p-6">
             <div className="bg-background border rounded-md min-h-[400px] h-[500px] overflow-hidden">
-              {fileMetadata.fileType === "pdf" ? (
-                <PDFPreview filePath={fileMetadata.filePath} />
-              ) : fileMetadata.fileType === "image" ? (
-                <ImagePreview filePath={fileMetadata.filePath} />
-              ) : fileMetadata.fileType === "excel" ? (
-                <ExcelPreview
-                  extractedText={fileMetadata.extractedText}
-                  fileName={fileMetadata.fileName}
-                />
-              ) : fileMetadata.fileType === "word" ? (
-                <WordPreview
-                  extractedText={fileMetadata.extractedText}
-                  fileName={fileMetadata.fileName}
-                />
-              ) : fileMetadata.fileType === "powerpoint" ? (
-                <PowerPointPreview
-                  extractedText={fileMetadata.extractedText}
-                  fileName={fileMetadata.fileName}
-                />
-              ) : (
-                <div className="h-full flex items-center justify-center">
-                  <div className="text-center text-muted-foreground">
-                    <FileText className="h-16 w-16 mx-auto mb-3 opacity-20" />
-                    <p>プレビュー未対応</p>
-                    <p className="text-xs mt-1">
-                      このファイル形式のプレビューは準備中です
-                    </p>
-                  </div>
-                </div>
-              )}
+              <FilePreview
+                filePath={fileMetadata.filePath}
+                fileName={fileMetadata.fileName}
+                fileType={fileMetadata.fileType}
+                extractedText={fileMetadata.extractedText}
+              />
             </div>
           </div>
 
@@ -353,7 +336,12 @@ export const FileDetailModal: React.FC<FileDetailModalProps> = ({
             />
           </div>
 
-          {/* Error display */}
+          {/* Success/Error display */}
+          {successMessage && (
+            <div className="bg-green-50 text-green-700 text-sm p-3 rounded-md border border-green-200">
+              {successMessage}
+            </div>
+          )}
           {error && (
             <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
               {error}

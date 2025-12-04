@@ -114,6 +114,15 @@ fn search_files(
     file_scanner::search_files(&app, &keyword)
 }
 
+/// 正規表現でファイルを検索
+#[tauri::command]
+fn search_files_regex(
+    app: tauri::AppHandle,
+    pattern: String,
+) -> Result<Vec<file_scanner::SearchResult>, String> {
+    file_scanner::search_files_regex(&app, &pattern)
+}
+
 /// 全ドライブを取得
 #[tauri::command]
 fn get_all_drives() -> Vec<String> {
@@ -313,6 +322,7 @@ pub fn run() {
             analyze_ppt_file,
             scan_directory,
             search_files,
+            search_files_regex,
             get_all_drives,
             scan_all_drives,
             is_first_run,

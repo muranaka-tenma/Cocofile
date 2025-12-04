@@ -61,6 +61,33 @@ export class RealFileService {
   }
 
   /**
+   * Search files using regex pattern
+   */
+  async searchFilesRegex(pattern: string): Promise<SearchResult[]> {
+    try {
+      // パターンが空の場合は空配列を返す
+      if (!pattern || pattern.trim() === "") {
+        return [];
+      }
+
+      // Tauri バックエンドを呼び出し
+      const tauriResults = await TauriService.searchFilesRegex(pattern.trim());
+
+      // Tauri結果をフロントエンド型に変換
+      const searchResults: SearchResult[] = tauriResults.map((result) =>
+        this.convertToSearchResult(result),
+      );
+
+      return searchResults;
+    } catch (error) {
+      console.error("Regex search error:", error);
+      throw new Error(
+        error instanceof Error ? error.message : "Invalid regex pattern",
+      );
+    }
+  }
+
+  /**
    * Get favorite files
    * Phase 3: 統合完了
    */
@@ -166,12 +193,15 @@ export class RealFileService {
 
   /**
    * Update file memo
-   * Phase 3: memoはDBにあるが、Tauri APIは未実装
-   * TODO: Rust側にupdate_file_memo APIを追加する必要あり
+   * Phase 3: 統合完了
    */
   async updateMemo(filePath: string, memo: string): Promise<void> {
-    console.warn("Update memo API not yet exposed (TODO):", filePath, memo);
-    // Rust側にAPIを追加する必要がある
+    try {
+      await TauriService.updateMemo(filePath, memo);
+    } catch (error) {
+      console.error("Update memo error:", error);
+      throw new Error("Failed to update memo");
+    }
   }
 
   /**

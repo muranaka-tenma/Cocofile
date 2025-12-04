@@ -1,8 +1,9 @@
 // CocoFile - Excel Preview Component
 // Displays Excel files by showing extracted text content in a structured format
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import { FileSpreadsheet, AlertCircle } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 interface ExcelPreviewProps {
   extractedText: string;
@@ -13,32 +14,86 @@ export const ExcelPreview: React.FC<ExcelPreviewProps> = ({
   extractedText,
   fileName,
 }) => {
-  // Parse extracted text into structured data
+  const [currentSheet, setCurrentSheet] = useState<number>(0);
+
+  // Parse extracted text into sheets and structured data
   const parsedData = useMemo(() => {
     if (!extractedText) return null;
 
-    // Split by lines
-    const lines = extractedText.split("\n").filter((line) => line.trim());
+    // Try to detect sheet boundaries (look for patterns like "Sheet1:", "Sheet 1:", etc.)
+    const sheetMarkerRegex = /^(Sheet|シート)\s*\d+/i;
+    const lines = extractedText.split("\n");
 
-    if (lines.length === 0) return null;
+    // Group lines into sheets
+    const sheets: Array<{
+      name: string;
+      lines: string[];
+    }> = [];
 
-    // Try to detect if it's tab-separated or comma-separated
-    const firstLine = lines[0];
-    const separator = firstLine.includes("\t") ? "\t" : ",";
+    let currentSheetName = "Sheet 1";
+    let currentSheetLines: string[] = [];
 
-    // Parse into rows
-    const rows = lines.map((line) =>
-      line.split(separator).map((cell) => cell.trim()),
-    );
+    lines.forEach((line) => {
+      const trimmed = line.trim();
 
-    // Find max columns
-    const maxCols = Math.max(...rows.map((row) => row.length));
+      // Check if this line is a sheet marker
+      if (sheetMarkerRegex.test(trimmed)) {
+        // Save previous sheet if it has content
+        if (currentSheetLines.length > 0) {
+          sheets.push({
+            name: currentSheetName,
+            lines: currentSheetLines,
+          });
+          currentSheetLines = [];
+        }
+        currentSheetName = trimmed;
+      } else if (trimmed) {
+        currentSheetLines.push(trimmed);
+      }
+    });
 
-    return {
-      rows,
-      maxCols,
-      separator,
-    };
+    // Add last sheet
+    if (currentSheetLines.length > 0) {
+      sheets.push({
+        name: currentSheetName,
+        lines: currentSheetLines,
+      });
+    }
+
+    // If no sheets were detected, treat entire content as one sheet
+    if (sheets.length === 0) {
+      const allLines = lines.filter((line) => line.trim());
+      if (allLines.length > 0) {
+        sheets.push({
+          name: "Sheet 1",
+          lines: allLines,
+        });
+      }
+    }
+
+    // Parse each sheet's lines into rows
+    const parsedSheets = sheets.map((sheet) => {
+      // Try to detect if it's tab-separated or comma-separated
+      const firstLine = sheet.lines[0] || "";
+      const separator = firstLine.includes("\t") ? "\t" : ",";
+
+      // Parse into rows
+      const rows = sheet.lines.map((line) =>
+        line.split(separator).map((cell) => cell.trim()),
+      );
+
+      // Find max columns
+      const maxCols = Math.max(...rows.map((row) => row.length));
+
+      return {
+        name: sheet.name,
+        rows,
+        maxCols,
+        separator,
+      };
+    });
+
+    return parsedSheets;
   }, [extractedText]);
 
   if (!extractedText) {
@@ -53,7 +108,7 @@ export const ExcelPreview: React.FC<ExcelPreviewProps> = ({
     );
   }
 
-  if (!parsedData || parsedData.rows.length === 0) {
+  if (!parsedData || parsedData.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-full p-8 text-gray-500">
         <FileSpreadsheet className="h-12 w-12 mb-4 text-gray-400" />
@@ -62,25 +117,53 @@ export const ExcelPreview: React.FC<ExcelPreviewProps> = ({
     );
   }
 
+  // Get current sheet data
+  const currentSheetData = parsedData[currentSheet];
+
   return (
     <div className="flex flex-col h-full bg-gray-50">
-      {/* Header */}
-      <div className="flex items-center gap-2 p-3 bg-white border-b">
-        <FileSpreadsheet className="h-5 w-5 text-green-600" />
-        <span className="text-sm font-medium text-gray-700">
-          {fileName || "Excel Preview"}
-        </span>
-        <span className="text-xs text-gray-500 ml-auto">
-          {parsedData.rows.length} 行 × {parsedData.maxCols} 列
+      {/* Header with sheet tabs */}
+      <div className="flex items-center justify-between p-2 bg-white border-b">
+        <div className="flex items-center gap-2">
+          <FileSpreadsheet className="h-5 w-5 text-green-600" />
+          <span className="text-sm font-medium text-gray-700">
+            {fileName || "Excel Preview"}
+          </span>
+        </div>
+
+        {/* Sheet info */}
+        <span className="text-xs text-gray-500">
+          {currentSheetData.rows.length} 行 × {currentSheetData.maxCols} 列
         </span>
       </div>
+
+      {/* Sheet tabs */}
+      {parsedData.length > 1 && (
+        <div className="flex items-center gap-1 p-2 bg-gray-100 border-b overflow-x-auto">
+          {parsedData.map((sheet, index) => (
+            <Button
+              key={index}
+              variant={currentSheet === index ? "default" : "outline"}
+              size="sm"
+              onClick={() => setCurrentSheet(index)}
+              className={
+                currentSheet === index
+                  ? "bg-green-600 hover:bg-green-700 text-white"
+                  : ""
+              }
+            >
+              {sheet.name}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-auto p-4">
         <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
           <table className="w-full border-collapse">
             <tbody>
-              {parsedData.rows.map((row, rowIndex) => (
+              {currentSheetData.rows.map((row, rowIndex) => (
                 <tr
                   key={rowIndex}
                   className={rowIndex === 0 ? "bg-gray-50 font-medium" : ""}
@@ -90,7 +173,7 @@ export const ExcelPreview: React.FC<ExcelPreviewProps> = ({
                     {rowIndex + 1}
                   </td>
                   {/* Cells */}
-                  {Array.from({ length: parsedData.maxCols }).map(
+                  {Array.from({ length: currentSheetData.maxCols }).map(
                     (_, colIndex) => (
                       <td
                         key={colIndex}

@@ -55,7 +55,7 @@ export const ScanIndexScreen: React.FC = () => {
           setIsFullScanning(false);
           setOperationMessage(`スキャンエラー: ${err}`);
         });
-    } catch (err) {
+    } catch {
       setOperationMessage("PC全体スキャンの開始に失敗しました");
       setIsFullScanning(false);
     }
@@ -114,7 +114,7 @@ export const ScanIndexScreen: React.FC = () => {
       setOperationMessage(null);
       const result = await cleanupDatabase();
       setOperationMessage(result.message);
-    } catch (err) {
+    } catch {
       setOperationMessage("クリーンアップに失敗しました");
     } finally {
       setIsCleaningUp(false);
@@ -136,7 +136,7 @@ export const ScanIndexScreen: React.FC = () => {
       setOperationMessage(null);
       const result = await rebuildDatabase();
       setOperationMessage(result.message);
-    } catch (err) {
+    } catch {
       setOperationMessage("再構築に失敗しました");
     } finally {
       setIsRebuilding(false);
@@ -145,16 +145,16 @@ export const ScanIndexScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-gray-50">
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center gap-2 text-red-700">
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <div className="bg-destructive/10 border border-destructive rounded-lg p-4 flex items-center gap-2 text-destructive">
           <AlertCircle className="w-5 h-5" />
           <span>{error.message}</span>
         </div>
@@ -163,9 +163,9 @@ export const ScanIndexScreen: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-background p-6">
       <div className="max-w-4xl mx-auto space-y-4">
-        <h1 className="text-2xl font-medium text-gray-900 mb-6">
+        <h1 className="text-2xl font-medium text-foreground mb-6">
           スキャン・インデックス管理
         </h1>
 

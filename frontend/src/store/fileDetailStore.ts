@@ -17,6 +17,7 @@ interface FileDetailState {
   // UI state
   isLoading: boolean;
   error: string | null;
+  successMessage: string | null;
 
   // Actions
   openModal: (metadata: FileMetadata) => void;
@@ -29,6 +30,7 @@ interface FileDetailState {
   toggleFavorite: () => void;
   setIsLoading: (isLoading: boolean) => void;
   setError: (error: string | null) => void;
+  setSuccessMessage: (message: string | null) => void;
   resetEditState: () => void;
   markSaved: () => void;
 }
@@ -42,6 +44,7 @@ export const useFileDetailStore = create<FileDetailState>((set, get) => ({
   hasUnsavedChanges: false,
   isLoading: false,
   error: null,
+  successMessage: null,
 
   // Modal actions
   openModal: (metadata) =>
@@ -52,6 +55,7 @@ export const useFileDetailStore = create<FileDetailState>((set, get) => ({
       editedMemo: metadata.memo || "",
       hasUnsavedChanges: false,
       error: null,
+      successMessage: null,
     }),
 
   closeModal: () =>
@@ -62,6 +66,7 @@ export const useFileDetailStore = create<FileDetailState>((set, get) => ({
       editedMemo: "",
       hasUnsavedChanges: false,
       error: null,
+      successMessage: null,
     }),
 
   setFileMetadata: (metadata) =>
@@ -122,6 +127,9 @@ export const useFileDetailStore = create<FileDetailState>((set, get) => ({
 
   // Error state
   setError: (error) => set({ error }),
+
+  // Success message state
+  setSuccessMessage: (message) => set({ successMessage: message }),
 
   // Reset edit state to match file metadata
   resetEditState: () => {

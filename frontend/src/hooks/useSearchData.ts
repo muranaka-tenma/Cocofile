@@ -18,9 +18,11 @@ export const useSearchData = () => {
     searchResults,
     isSearching,
     error,
+    isRegexMode,
     setSearchResults,
     setIsSearching,
     setError,
+    setRegexError,
   } = useSearchStore();
 
   // Initialize search cache
@@ -41,14 +43,28 @@ export const useSearchData = () => {
         case TAB_TYPES.SEARCH_RESULTS: {
           // Check cache first
           const cachedResults = getCached(keyword, filters);
-          if (cachedResults) {
+          if (cachedResults && !isRegexMode) {
             results = cachedResults;
             console.log("✓ Cache hit for search:", keyword);
           } else {
-            results = await fileService.searchFiles(keyword, filters);
-            // Cache the results
-            setCached(keyword, filters, results);
-            console.log("→ Cached search:", keyword);
+            // Use regex search if regex mode is enabled
+            if (isRegexMode) {
+              try {
+                results = await fileService.searchFilesRegex(keyword);
+                setRegexError(null);
+              } catch (err) {
+                const errorMsg =
+                  err instanceof Error ? err.message : "Invalid regex pattern";
+                setRegexError(errorMsg);
+                console.error("Regex search error:", err);
+                results = [];
+              }
+            } else {
+              results = await fileService.searchFiles(keyword, filters);
+              // Cache the results (only for non-regex searches)
+              setCached(keyword, filters, results);
+              console.log("→ Cached search:", keyword);
+            }
           }
           break;
         }
@@ -76,9 +92,11 @@ export const useSearchData = () => {
     keyword,
     filters,
     activeTab,
+    isRegexMode,
     setSearchResults,
     setIsSearching,
     setError,
+    setRegexError,
     getCached,
     setCached,
   ]);

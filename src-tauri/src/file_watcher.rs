@@ -5,11 +5,13 @@ use crate::database;
 use crate::logger;
 use crate::settings_manager;
 use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{channel, Receiver, Sender};
 use std::sync::Mutex;
 use std::thread;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, Instant};
+use tauri::Emitter;
 
 /// ファイル監視イベント
 #[derive(Debug, Clone)]
@@ -30,6 +32,7 @@ pub struct FileWatcherManager {
     watcher: Option<RecommendedWatcher>,
     event_receiver: Option<Receiver<FileEvent>>,
     watched_paths: Vec<PathBuf>,
+    app_handle: Option<tauri::AppHandle>,
 }
 
 impl FileWatcherManager {
@@ -39,16 +42,44 @@ impl FileWatcherManager {
             watcher: None,
             event_receiver: None,
             watched_paths: Vec::new(),
+            app_handle: None,
         }
+    }
+
+    /// ファイルが除外対象かチェック
+    fn is_excluded(
+        path: &Path,
+        excluded_folders: &[String],
+        excluded_extensions: &[String],
+    ) -> bool {
+        // 除外フォルダをチェック
+        let path_str = path.to_string_lossy();
+        for excluded in excluded_folders {
+            if path_str.contains(excluded) {
+                return true;
+            }
+        }
+
+        // 除外拡張子をチェック
+        if let Some(ext) = path.extension() {
+            let ext_str = format!(".{}", ext.to_string_lossy());
+            if excluded_extensions.contains(&ext_str) {
+                return true;
+            }
+        }
+
+        false
     }
 
     /// ファイル監視を開始
     pub fn start(&mut self, app: tauri::AppHandle) -> Result<(), String> {
         logger::info("FileWatcher", "Starting file watcher...");
 
-        // 設定から監視フォルダを取得
+        // 設定から監視フォルダと除外設定を取得
         let settings = settings_manager::get_settings(&app)?;
         let watched_folders = settings.watched_folders;
+        let excluded_folders = settings.excluded_folders.clone();
+        let excluded_extensions = settings.excluded_extensions.clone();
 
         if watched_folders.is_empty() {
             logger::info(
@@ -57,6 +88,8 @@ impl FileWatcherManager {
             );
             return Ok(());
         }
+
+        self.app_handle = Some(app.clone());
 
         // イベントチャンネルを作成
         let (tx, rx) = channel::<FileEvent>();
@@ -93,12 +126,19 @@ impl FileWatcherManager {
 
         // イベント処理スレッドを起動
         let event_sender = tx.clone();
+        let excluded_folders_clone = excluded_folders.clone();
+        let excluded_extensions_clone = excluded_extensions.clone();
         thread::spawn(move || {
             logger::info("FileWatcher", "Event processing thread started");
             for res in notify_rx {
                 match res {
                     Ok(event) => {
-                        Self::process_notify_event(event, &event_sender);
+                        Self::process_notify_event(
+                            event,
+                            &event_sender,
+                            &excluded_folders_clone,
+                            &excluded_extensions_clone,
+                        );
                     }
                     Err(e) => {
                         logger::error("FileWatcher", &format!("Watch error: {:?}", e));
@@ -121,7 +161,12 @@ impl FileWatcherManager {
     }
 
     /// notifyイベントを内部イベントに変換
-    fn process_notify_event(event: Event, sender: &Sender<FileEvent>) {
+    fn process_notify_event(
+        event: Event,
+        sender: &Sender<FileEvent>,
+        excluded_folders: &[String],
+        excluded_extensions: &[String],
+    ) {
         use notify::EventKind;
 
         let event_type = match event.kind {
@@ -134,30 +179,41 @@ impl FileWatcherManager {
         if let Some(event_type) = event_type {
             for path in event.paths {
                 // ディレクトリは無視
-                if path.is_file() {
-                    let file_event = FileEvent {
-                        path: path.clone(),
-                        event_type: event_type.clone(),
-                    };
-                    let _ = sender.send(file_event);
+                if !path.is_file() {
+                    continue;
                 }
+
+                // 除外パターンをチェック
+                if Self::is_excluded(&path, excluded_folders, excluded_extensions) {
+                    // 除外ファイルは大量になるので、詳細ログは出力しない
+                    continue;
+                }
+
+                let file_event = FileEvent {
+                    path: path.clone(),
+                    event_type: event_type.clone(),
+                };
+                let _ = sender.send(file_event);
             }
         }
     }
 
-    /// データベース更新ループ
+    /// データベース更新ループ（改善版debounce処理）
     fn update_database_loop(app: tauri::AppHandle, receiver: Receiver<FileEvent>) {
         logger::info("FileWatcher", "Database update thread started");
 
-        let mut pending_events: Vec<FileEvent> = Vec::new();
-        let batch_delay = Duration::from_secs(2);
-        let mut last_batch_time = SystemTime::now();
+        // ファイルパスごとの最後のイベント時刻を記録
+        let mut pending_events: HashMap<PathBuf, (FileEvent, Instant)> = HashMap::new();
+        let batch_delay = Duration::from_millis(500); // 500ms
+        let debounce_delay = Duration::from_millis(1000); // 1秒
 
         loop {
             // イベントを受信（タイムアウト付き）
             match receiver.recv_timeout(batch_delay) {
                 Ok(event) => {
-                    pending_events.push(event);
+                    // 同じファイルのイベントは最新のものだけを保持（debounce）
+                    let path = event.path.clone();
+                    pending_events.insert(path, (event, Instant::now()));
                 }
                 Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
                     // タイムアウト: バッチ処理を実行
@@ -168,22 +224,26 @@ impl FileWatcherManager {
                 }
             }
 
-            // 一定時間経過またはイベントが溜まったら処理
-            let elapsed = SystemTime::now()
-                .duration_since(last_batch_time)
-                .unwrap_or(Duration::from_secs(0));
+            // debounce期間が経過したイベントを処理
+            let now = Instant::now();
+            let mut events_to_process: Vec<FileEvent> = Vec::new();
+            pending_events.retain(|_path, (event, timestamp)| {
+                if now.duration_since(*timestamp) >= debounce_delay {
+                    events_to_process.push(event.clone());
+                    false // このイベントを削除
+                } else {
+                    true // このイベントを保持
+                }
+            });
 
-            if !pending_events.is_empty() && elapsed >= batch_delay {
+            if !events_to_process.is_empty() {
                 logger::info(
                     "FileWatcher",
-                    &format!("Processing {} pending events", pending_events.len()),
+                    &format!("Processing {} debounced events", events_to_process.len()),
                 );
 
                 // イベントをバッチ処理
-                Self::process_events_batch(&app, &pending_events);
-
-                pending_events.clear();
-                last_batch_time = SystemTime::now();
+                Self::process_events_batch(&app, &events_to_process);
             }
         }
 
@@ -192,6 +252,10 @@ impl FileWatcherManager {
 
     /// イベントバッチを処理
     fn process_events_batch(app: &tauri::AppHandle, events: &[FileEvent]) {
+        let mut indexed_count = 0;
+        let mut deleted_count = 0;
+        let mut error_count = 0;
+
         for event in events {
             let path_str = event.path.to_string_lossy().to_string();
 
@@ -201,11 +265,15 @@ impl FileWatcherManager {
                     if event.path.exists() {
                         logger::info("FileWatcher", &format!("Indexing file: {}", path_str));
 
-                        if let Err(e) = Self::index_file(app, &event.path) {
-                            logger::error(
-                                "FileWatcher",
-                                &format!("Failed to index {}: {}", path_str, e),
-                            );
+                        match Self::index_file(app, &event.path) {
+                            Ok(_) => indexed_count += 1,
+                            Err(e) => {
+                                logger::error(
+                                    "FileWatcher",
+                                    &format!("Failed to index {}: {}", path_str, e),
+                                );
+                                error_count += 1;
+                            }
                         }
                     }
                 }
@@ -216,14 +284,31 @@ impl FileWatcherManager {
                         &format!("Removing file from index: {}", path_str),
                     );
 
-                    if let Err(e) = Self::remove_file_from_index(app, &path_str) {
-                        logger::error(
-                            "FileWatcher",
-                            &format!("Failed to remove {}: {}", path_str, e),
-                        );
+                    match Self::remove_file_from_index(app, &path_str) {
+                        Ok(_) => deleted_count += 1,
+                        Err(e) => {
+                            logger::error(
+                                "FileWatcher",
+                                &format!("Failed to remove {}: {}", path_str, e),
+                            );
+                            error_count += 1;
+                        }
                     }
                 }
             }
+        }
+
+        // フロントエンドにイベントを通知
+        if indexed_count > 0 || deleted_count > 0 {
+            let _ = app.emit(
+                "file-watcher-update",
+                serde_json::json!({
+                    "indexed": indexed_count,
+                    "deleted": deleted_count,
+                    "errors": error_count,
+                    "timestamp": chrono::Utc::now().to_rfc3339()
+                }),
+            );
         }
     }
 

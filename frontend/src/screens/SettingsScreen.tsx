@@ -2,7 +2,7 @@
 // Based on mockups/SettingsScreen.html
 
 import React, { useEffect, useState } from "react";
-import { Trash2, Plus, X } from "lucide-react";
+import { Trash2, Plus, X, Activity } from "lucide-react";
 import { useSettingsStore } from "@/store/settingsStore";
 import { SCAN_TIMING_TYPES } from "@/types";
 import type { ScanTimingType } from "@/types";
@@ -13,6 +13,15 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
+import { ThemeToggle } from "@/components/ThemeToggle";
+import { listen } from "@tauri-apps/api/event";
+
+interface FileWatcherStats {
+  indexed: number;
+  deleted: number;
+  errors: number;
+  timestamp: string;
+}
 
 export const SettingsScreen: React.FC = () => {
   const {
@@ -38,11 +47,30 @@ export const SettingsScreen: React.FC = () => {
 
   const [newExtensionInput, setNewExtensionInput] = useState("");
   const [newTagInput, setNewTagInput] = useState("");
+  const [watcherStats, setWatcherStats] = useState<FileWatcherStats | null>(
+    null,
+  );
 
   useEffect(() => {
     loadSettings();
     checkFileWatcherStatus();
   }, [loadSettings, checkFileWatcherStatus]);
+
+  // ファイル監視統計情報をリッスン
+  useEffect(() => {
+    const unlisten = listen<FileWatcherStats>(
+      "file-watcher-update",
+      (event) => {
+        setWatcherStats(event.payload);
+        // 5秒後に統計を消去
+        setTimeout(() => setWatcherStats(null), 5000);
+      },
+    );
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, []);
 
   const handleSelectFolder = async () => {
     // @MOCK_TO_API: This will use Tauri's dialog API in production
@@ -182,6 +210,36 @@ export const SettingsScreen: React.FC = () => {
               ⚠️ ファイル監視を開始するには、監視フォルダを追加してください
             </p>
           )}
+
+          {/* ファイル監視統計 */}
+          {fileWatcherActive && watcherStats && (
+            <div className="bg-muted rounded-md p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-blue-500" />
+                <p className="text-sm font-medium">最新の更新</p>
+              </div>
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <div>
+                  <p className="text-muted-foreground">インデックス化</p>
+                  <p className="text-lg font-semibold text-green-600">
+                    {watcherStats.indexed}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">削除</p>
+                  <p className="text-lg font-semibold text-orange-600">
+                    {watcherStats.deleted}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-muted-foreground">エラー</p>
+                  <p className="text-lg font-semibold text-red-600">
+                    {watcherStats.errors}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -226,6 +284,15 @@ export const SettingsScreen: React.FC = () => {
           <CardTitle>UI設定</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label>テーマ</Label>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                アプリケーションのカラーテーマを選択
+              </p>
+              <ThemeToggle variant="select" />
+            </div>
+          </div>
           <div className="space-y-2">
             <Label htmlFor="hotkey">
               ホットキー (ウィンドウを呼び出すショートカット)

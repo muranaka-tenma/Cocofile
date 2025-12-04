@@ -32,8 +32,7 @@ export const SEARCH_FIELDS = {
   MEMO: "memo",
 } as const;
 
-export type SearchField =
-  (typeof SEARCH_FIELDS)[keyof typeof SEARCH_FIELDS];
+export type SearchField = (typeof SEARCH_FIELDS)[keyof typeof SEARCH_FIELDS];
 
 export interface SearchHistoryItem {
   keyword: string;
@@ -51,6 +50,8 @@ interface SearchState {
   isSearching: boolean;
   error: string | null;
   searchHistory: SearchHistoryItem[];
+  isRegexMode: boolean;
+  regexError: string | null;
 
   // Actions
   setKeyword: (keyword: string) => void;
@@ -60,6 +61,8 @@ interface SearchState {
   setSearchResults: (results: SearchResult[]) => void;
   setIsSearching: (isSearching: boolean) => void;
   setError: (error: string | null) => void;
+  setIsRegexMode: (isRegexMode: boolean) => void;
+  setRegexError: (error: string | null) => void;
 
   // Filter actions
   toggleTag: (tag: string) => void;
@@ -92,6 +95,8 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   isSearching: false,
   error: null,
   searchHistory: [],
+  isRegexMode: false,
+  regexError: null,
 
   // Basic actions
   setKeyword: (keyword) => set({ keyword }),
@@ -110,6 +115,10 @@ export const useSearchStore = create<SearchState>((set, get) => ({
   setIsSearching: (isSearching) => set({ isSearching }),
 
   setError: (error) => set({ error }),
+
+  setIsRegexMode: (isRegexMode) => set({ isRegexMode, regexError: null }),
+
+  setRegexError: (regexError) => set({ regexError }),
 
   // Filter actions
   toggleTag: (tag) =>

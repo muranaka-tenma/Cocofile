@@ -4,14 +4,18 @@
 import React from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigationStore } from "@/store/navigationStore";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const DevNavigation: React.FC = () => {
   const { currentScreen, navigateTo } = useNavigationStore();
 
   return (
-    <div className="fixed bottom-4 right-4 bg-white shadow-lg rounded-lg p-3 border border-gray-200 z-50">
-      <div className="text-xs font-medium text-gray-500 mb-2">
+    <div className="fixed bottom-4 right-4 bg-card shadow-lg rounded-lg p-3 border border-border z-50">
+      <div className="text-xs font-medium text-muted-foreground mb-2">
         Dev Navigation
+      </div>
+      <div className="mb-2 pb-2 border-b border-border">
+        <ThemeToggle variant="button" />
       </div>
       <div className="flex flex-col gap-1">
         <Button
