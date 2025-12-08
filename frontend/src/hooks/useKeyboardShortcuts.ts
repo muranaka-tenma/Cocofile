@@ -1,7 +1,8 @@
 // CocoFile - Keyboard Shortcuts Hook
 // Manages keyboard shortcuts for enhanced navigation and productivity
 
-import { useEffect, RefObject } from "react";
+import { useEffect } from "react";
+import type { RefObject } from "react";
 
 interface KeyboardShortcutsConfig {
   // Search box reference for Ctrl+K focus

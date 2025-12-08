@@ -2,7 +2,6 @@
 // Optimized rendering for large search result sets using react-window
 
 import React from "react";
-import { FixedSizeList as List } from "react-window";
 import { Button } from "@/components/ui/button";
 import { TagBadge } from "@/components/TagBadge";
 import { Star, Folder } from "lucide-react";
@@ -31,15 +30,14 @@ export const VirtualizedResultList: React.FC<VirtualizedResultListProps> =
       formatFileSize,
       formatRelativeTime,
       height = 600,
-      itemHeight = 140,
     }) => {
-      // Row renderer for react-window (useMemo for performance)
-      const Row = React.useCallback(
-        ({ index, style }: { index: number; style: React.CSSProperties }) => {
-          const result = results[index];
-
-          return (
-            <div style={style} className="px-1 py-1.5">
+      return (
+        <div
+          style={{ height, overflow: "auto" }}
+          className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
+        >
+          {results.map((result) => (
+            <div key={result.filePath} className="px-1 py-1.5">
               <div
                 className="flex gap-3 p-3 border border-border rounded-lg hover:bg-accent hover:border-primary/30 transition-all duration-200 cursor-pointer hover:shadow-md animate-fade-in"
                 onClick={() => onShowDetail(result.metadata)}
@@ -118,28 +116,8 @@ export const VirtualizedResultList: React.FC<VirtualizedResultListProps> =
                 </div>
               </div>
             </div>
-          );
-        },
-        [
-          results,
-          onToggleFavorite,
-          onOpenFileLocation,
-          onShowDetail,
-          formatFileSize,
-          formatRelativeTime,
-        ],
-      );
-
-      return (
-        <List
-          height={height}
-          itemCount={results.length}
-          itemSize={itemHeight}
-          width="100%"
-          className="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100"
-        >
-          {Row}
-        </List>
+          ))}
+        </div>
       );
     },
   );

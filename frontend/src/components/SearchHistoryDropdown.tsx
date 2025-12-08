@@ -3,7 +3,7 @@
 
 import React from "react";
 import { Clock, X, Trash2 } from "lucide-react";
-import { SearchHistoryItem } from "@/hooks/useSearchHistory";
+import type { SearchHistoryItem } from "@/hooks/useSearchHistory";
 import { Button } from "@/components/ui/button";
 
 interface SearchHistoryDropdownProps {

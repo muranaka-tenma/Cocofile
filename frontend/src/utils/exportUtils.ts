@@ -1,7 +1,7 @@
 // CocoFile - Export Utilities
 // Functions for exporting search results to CSV and JSON
 
-import { SearchResult } from "@/types";
+import type { SearchResult } from "@/types";
 
 /**
  * Export search results to CSV format
@@ -38,7 +38,7 @@ export const exportToCSV = (results: SearchResult[], filename?: string) => {
       metadata.createdAt.toISOString(),
       metadata.updatedAt.toISOString(),
       result.lastAccessedAt.toISOString(),
-      result.accessCount.toString(),
+      metadata.accessCount.toString(),
       metadata.isFavorite ? "はい" : "いいえ",
       (metadata.tags || []).join("; "),
       metadata.memo || "",
@@ -99,13 +99,13 @@ export const exportToJSON = (results: SearchResult[], filename?: string) => {
         createdAt: result.metadata.createdAt.toISOString(),
         updatedAt: result.metadata.updatedAt.toISOString(),
         lastAccessedAt: result.lastAccessedAt.toISOString(),
-        accessCount: result.accessCount,
+        accessCount: result.metadata.accessCount,
         isFavorite: result.metadata.isFavorite,
         tags: result.metadata.tags || [],
         memo: result.metadata.memo || "",
       },
-      extractedText: result.extractedText
-        ? result.extractedText.substring(0, 500)
+      extractedText: result.metadata.extractedText
+        ? result.metadata.extractedText.substring(0, 500)
         : "", // Truncate for file size
     })),
   };

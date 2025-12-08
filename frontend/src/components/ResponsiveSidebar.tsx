@@ -9,7 +9,8 @@ import {
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { useNavigationStore, Screen } from "@/store/navigationStore";
+import { useNavigationStore } from "@/store/navigationStore";
+import type { Screen } from "@/store/navigationStore";
 
 interface SidebarItem {
   id: Screen;
@@ -56,7 +57,7 @@ interface ResponsiveSidebarProps {
 }
 
 export function ResponsiveSidebar({ className }: ResponsiveSidebarProps) {
-  const { currentScreen, setCurrentScreen } = useNavigationStore();
+  const { currentScreen, navigateTo } = useNavigationStore();
   const [isOpen, setIsOpen] = React.useState(false);
   const [isCollapsed, setIsCollapsed] = React.useState(false);
 
@@ -73,7 +74,7 @@ export function ResponsiveSidebar({ className }: ResponsiveSidebarProps) {
   }, [isOpen]);
 
   const handleItemClick = (screen: Screen) => {
-    setCurrentScreen(screen);
+    navigateTo(screen);
     setIsOpen(false);
   };
 

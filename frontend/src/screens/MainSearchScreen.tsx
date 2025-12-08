@@ -2,6 +2,7 @@
 // Desktop window UI for file search with filters and tabs
 
 import React, { useRef, useState } from "react";
+import type { RefObject } from "react";
 import {
   Search,
   Tag,
@@ -40,6 +41,7 @@ import { useFileDetailStore } from "@/store/fileDetailStore";
 import { useSortedResults } from "@/hooks/useSortedResults";
 import { useKeyboardShortcuts } from "@/hooks/useKeyboardShortcuts";
 import { TAB_TYPES, FILE_TYPES } from "@/types";
+import type { TabType } from "@/types";
 import { FileDetailModal } from "@/components/FileDetailModal";
 import { TagBadge } from "@/components/TagBadge";
 import { TagFilterDialog } from "@/components/TagFilterDialog";
@@ -213,7 +215,7 @@ export const MainSearchScreen: React.FC = () => {
 
   // Keyboard shortcuts
   useKeyboardShortcuts({
-    searchInputRef,
+    searchInputRef: searchInputRef as RefObject<HTMLInputElement>,
     onArrowUp: () => {
       setSelectedIndex((prev) => Math.max(0, prev - 1));
     },
@@ -238,18 +240,8 @@ export const MainSearchScreen: React.FC = () => {
   // Export handlers with toast notifications
   const handleExport = async (format: "csv" | "json") => {
     try {
-      const data = sortedResults.map((r) => ({
-        fileName: r.fileName,
-        filePath: r.filePath,
-        fileType: r.fileType,
-        score: r.score,
-        dateModified: r.metadata.dateModified,
-        size: r.metadata.size,
-        tags: r.metadata.tags?.join(", ") || "",
-      }));
-
       if (format === "csv") {
-        await exportToCSV(data, "search-results.csv");
+        await exportToCSV(sortedResults, "search-results.csv");
         toast.success("エクスポート完了", "CSVファイルをダウンロードしました");
       } else {
         await exportToJSON(sortedResults, "search-results.json");
@@ -263,10 +255,7 @@ export const MainSearchScreen: React.FC = () => {
 
   const handleCopyResults = async () => {
     try {
-      const text = sortedResults
-        .map((r) => `${r.fileName} - ${r.filePath}`)
-        .join("\n");
-      await copyToClipboard(text);
+      await copyToClipboard(sortedResults);
       toast.success("コピー完了", "検索結果をクリップボードにコピーしました");
     } catch (error) {
       console.error("Copy failed:", error);
@@ -626,7 +615,6 @@ export const MainSearchScreen: React.FC = () => {
               onShowDetail={openModal}
               formatFileSize={formatFileSize}
               formatRelativeTime={formatRelativeTime}
-              getFileIcon={getFileIcon}
               selectedIndex={selectedIndex}
               batchMode={batchMode}
               selectedFiles={selectedFiles}
@@ -646,7 +634,6 @@ export const MainSearchScreen: React.FC = () => {
               onShowDetail={openModal}
               formatFileSize={formatFileSize}
               formatRelativeTime={formatRelativeTime}
-              getFileIcon={getFileIcon}
               selectedIndex={selectedIndex}
               batchMode={batchMode}
               selectedFiles={selectedFiles}
@@ -666,7 +653,6 @@ export const MainSearchScreen: React.FC = () => {
               onShowDetail={openModal}
               formatFileSize={formatFileSize}
               formatRelativeTime={formatRelativeTime}
-              getFileIcon={getFileIcon}
               selectedIndex={selectedIndex}
               batchMode={batchMode}
               selectedFiles={selectedFiles}
