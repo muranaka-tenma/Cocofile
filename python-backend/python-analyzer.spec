@@ -3,35 +3,49 @@
 
 import sys
 from pathlib import Path
+from PyInstaller.utils.hooks import collect_all, collect_submodules
 
 block_cipher = None
+
+# Collect all dependencies for packages with dynamic imports
+datas = [
+    ('analyzers', 'analyzers'),
+    ('utils', 'utils'),
+    ('database', 'database'),
+]
+binaries = []
+hiddenimports = [
+    'pdfplumber',
+    'openpyxl',
+    'docx2txt',
+    'pptx',
+    'PIL',
+    'pypdfium2',
+]
+
+# Collect pkg_resources and all its dependencies (jaraco, platformdirs, etc.)
+for pkg in ['pkg_resources', 'jaraco', 'platformdirs']:
+    try:
+        pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(pkg)
+        datas += pkg_datas
+        binaries += pkg_binaries
+        hiddenimports += pkg_hiddenimports
+    except Exception:
+        pass
+
+# Also collect submodules explicitly
+for pkg in ['jaraco.text', 'jaraco.functools', 'jaraco.context']:
+    try:
+        hiddenimports += collect_submodules(pkg)
+    except Exception:
+        pass
 
 a = Analysis(
     ['main.py'],
     pathex=[],
-    binaries=[],
-    datas=[
-        ('analyzers', 'analyzers'),
-        ('utils', 'utils'),
-        ('database', 'database'),
-    ],
-    hiddenimports=[
-        'pdfplumber',
-        'openpyxl',
-        'docx2txt',
-        'pptx',
-        'PIL',
-        'pypdfium2',
-        # jaraco dependencies for PyInstaller
-        'jaraco',
-        'jaraco.text',
-        'jaraco.functools',
-        'jaraco.context',
-        'pkg_resources',
-        'pkg_resources.extern',
-        # Additional dependencies
-        'platformdirs',
-    ],
+    binaries=binaries,
+    datas=datas,
+    hiddenimports=hiddenimports,
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
