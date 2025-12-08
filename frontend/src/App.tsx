@@ -147,8 +147,8 @@ function App() {
   return (
     <>
       {renderScreen()}
-      {/* Dev navigation - remove in production */}
-      {import.meta.env.DEV && <DevNavigation />}
+      {/* Navigation menu */}
+      <DevNavigation />
 
       {/* Toast notifications */}
       <ToastContainer toasts={toasts} onClose={removeToast} />
