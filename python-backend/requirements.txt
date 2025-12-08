@@ -18,3 +18,8 @@ Pillow==10.1.0
 
 # PyInstaller（バイナリ化用）
 pyinstaller==6.3.0
+
+# PyInstaller依存関係（jaraco問題対策）
+jaraco.text
+jaraco.functools
+jaraco.context

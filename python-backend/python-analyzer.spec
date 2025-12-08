@@ -22,6 +22,13 @@ a = Analysis(
         'pptx',
         'PIL',
         'pypdfium2',
+        # jaraco dependencies for PyInstaller
+        'jaraco',
+        'jaraco.text',
+        'jaraco.functools',
+        'jaraco.context',
+        'pkg_resources',
+        'pkg_resources.extern',
     ],
     hookspath=[],
     hooksconfig={},
