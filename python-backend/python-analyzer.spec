@@ -29,6 +29,8 @@ a = Analysis(
         'jaraco.context',
         'pkg_resources',
         'pkg_resources.extern',
+        # Additional dependencies
+        'platformdirs',
     ],
     hookspath=[],
     hooksconfig={},
