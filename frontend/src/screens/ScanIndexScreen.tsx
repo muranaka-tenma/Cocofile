@@ -46,8 +46,7 @@ export const ScanIndexScreen: React.FC = () => {
         .then(() => {
           setIsFullScanning(false);
           toast.success("スキャン完了", "PC全体のスキャンが完了しました");
-          // Refresh statistics after scan completes
-          window.location.reload();
+          // Note: Statistics will be refreshed via event listener, no reload needed
         })
         .catch((err) => {
           console.error("Full scan error:", err);

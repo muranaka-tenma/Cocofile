@@ -316,6 +316,7 @@ async fn suggest_tags_ai(
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             // ロガーを初期化
             let app_handle = app.handle().clone();
