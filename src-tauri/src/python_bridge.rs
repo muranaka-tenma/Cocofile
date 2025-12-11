@@ -7,6 +7,9 @@ use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{mpsc, Mutex};
 use std::time::Duration;
 
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
+
 /// デバッグログをファイルに書き込む
 fn debug_log(message: &str) {
     let log_message = format!(
@@ -78,14 +81,22 @@ impl PythonBridge {
 
         // プロセス起動
         debug_log(&format!("Spawning Python process: {}", program));
-        let mut child = match Command::new(&program)
-            .args(&args)
+
+        let mut cmd = Command::new(&program);
+        cmd.args(&args)
             .env("PYTHONUNBUFFERED", "1") // stdout/stderrアンバッファリング強制
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
+            .stderr(Stdio::piped());
+
+        // Windowsではコンソールウィンドウを非表示にする
+        #[cfg(target_os = "windows")]
         {
+            const CREATE_NO_WINDOW: u32 = 0x08000000;
+            cmd.creation_flags(CREATE_NO_WINDOW);
+        }
+
+        let mut child = match cmd.spawn() {
             Ok(child) => {
                 debug_log("Python process spawned successfully");
                 child
