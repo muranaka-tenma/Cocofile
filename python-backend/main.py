@@ -19,25 +19,42 @@ import traceback
 from typing import Dict, Any
 
 # stdout/stderrを行バッファリングモードに設定（PyInstallerでのstdio通信のため）
-# PyInstallerでビルドされたexeでは、os.fdopen()が失敗する場合があるため、try-exceptで保護
+# PyInstallerでビルドされたexeでは、reconfigure()が失敗する場合があるため、try-exceptで保護
 def setup_unbuffered_io():
     """stdout/stderrを行バッファリングモードに設定"""
+    # PyInstaller環境かどうかをチェック
+    is_frozen = getattr(sys, 'frozen', False)
+
+    # PyInstaller環境では、stdioが特殊な状態になっている場合がある
+    # その場合は何もしない（PYTHONUNBUFFERED=1に依存）
+    if is_frozen:
+        # PyInstaller環境では単にflush()だけ試みる
+        try:
+            if sys.stdout:
+                sys.stdout.flush()
+            if sys.stderr:
+                sys.stderr.flush()
+        except:
+            pass
+        return True
+
+    # 通常のPython環境
     try:
         # reconfigure()を使用して行バッファリングを有効化（Python 3.7+）
-        # line_buffering=Trueで、各print()後に自動的にflushされる
-        sys.stdout.reconfigure(line_buffering=True)
-        sys.stderr.reconfigure(line_buffering=True)
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(line_buffering=True)
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(line_buffering=True)
         return True
-    except (OSError, AttributeError, ValueError) as e:
+    except (OSError, AttributeError, ValueError, Exception):
         # エラーが発生した場合は、環境変数PYTHONUNBUFFERED=1に依存
-        # （Rust側でPYTHONUNBUFFERED=1を設定済み）
-        sys.stderr.write(f"[WARN] Failed to enable line buffering: {type(e).__name__}: {e}\n")
-        sys.stderr.write(f"[INFO] Relying on PYTHONUNBUFFERED environment variable\n")
-        sys.stderr.flush()
         return False
 
-# I/O設定を実行
-setup_unbuffered_io()
+# I/O設定を実行（エラーを無視）
+try:
+    setup_unbuffered_io()
+except:
+    pass
 
 # 分析モジュールのインポート
 from analyzers.pdf_analyzer import analyze_pdf
