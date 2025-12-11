@@ -7,9 +7,6 @@ use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{mpsc, Mutex};
 use std::time::Duration;
 
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
-
 /// デバッグログをファイルに書き込む
 fn debug_log(message: &str) {
     let log_message = format!(
@@ -89,12 +86,9 @@ impl PythonBridge {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped());
 
-        // Windowsではコンソールウィンドウを非表示にする
-        #[cfg(target_os = "windows")]
-        {
-            const CREATE_NO_WINDOW: u32 = 0x08000000;
-            cmd.creation_flags(CREATE_NO_WINDOW);
-        }
+        // Note: CREATE_NO_WINDOW breaks stdin/stdout pipe communication
+        // Console visibility is controlled by PyInstaller spec (console=True)
+        // The console window is acceptable for now as it's needed for IPC
 
         let mut child = match cmd.spawn() {
             Ok(child) => {
