@@ -24,7 +24,7 @@ hiddenimports = [
 ]
 
 # Collect pkg_resources and all its dependencies (jaraco, platformdirs, etc.)
-for pkg in ['pkg_resources', 'jaraco', 'platformdirs']:
+for pkg in ['pkg_resources', 'jaraco', 'platformdirs', 'setuptools']:
     try:
         pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(pkg)
         datas += pkg_datas
@@ -32,6 +32,9 @@ for pkg in ['pkg_resources', 'jaraco', 'platformdirs']:
         hiddenimports += pkg_hiddenimports
     except Exception:
         pass
+
+# Explicitly add platformdirs to hiddenimports (critical for pkg_resources)
+hiddenimports += ['platformdirs', 'platformdirs.unix', 'platformdirs.windows']
 
 # Also collect submodules explicitly
 for pkg in ['jaraco.text', 'jaraco.functools', 'jaraco.context']:
